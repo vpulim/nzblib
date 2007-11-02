@@ -91,17 +91,32 @@ uint32_t crc32_tab[] = {
 };
 
 uint32_t
-crc32(const void *buf, size_t size)
+crc32(const char *buf, size_t size)
 {
-	const uint8_t *p;
-	uint32_t crc;
+	uint32_t crc, i;
 
-	p = buf;
 	crc = ~0U;
 
-	while (size--)
-		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+	for (i = 0; i < size; i++)
+		crc = crc32_tab[(crc ^ buf[i]) & 0xFF] ^ (crc >> 8);
 
+		
+	return crc ^ ~0U;
+}
+
+
+uint32_t crc32_init()
+{
+	return ~0U;
+}
+
+uint32_t crc32_add(uint32_t crc, const char c)
+{
+	return crc32_tab[(crc ^ c) & 0xFF] ^ (crc >> 8);
+}
+
+uint32_t crc32_finish(uint32_t crc)
+{
 	return crc ^ ~0U;
 }
 

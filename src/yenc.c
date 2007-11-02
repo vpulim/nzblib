@@ -49,7 +49,8 @@ int yenc_decode(segment_t *segment)
 {
     char *p, *s = segment->data;
     unsigned char ch;
-    uint32_t checksum;
+    uint32_t yenc_checksum;
+    uint32_t data_checksum;
     int i = 0;
     int pos = 0;
     int in_data = 0;
@@ -61,6 +62,9 @@ int yenc_decode(segment_t *segment)
         return 1;
     }
 
+    
+    data_checksum = crc32_init(data_checksum);
+    
     while((p = strsep(&s, "\r\n")))
     {
         if (*p == 0)
@@ -81,7 +85,7 @@ int yenc_decode(segment_t *segment)
         }
         else if(strncmp(p, "=yend", 5) == 0)
         {
-            checksum = yenc_parse_yend(p);
+            yenc_checksum = yenc_parse_yend(p);
             in_data = 0;
             break;
         }
@@ -101,12 +105,14 @@ int yenc_decode(segment_t *segment)
                 ch -= 42;
 
                 segment->decoded_data[pos++] = ch;
+                data_checksum = crc32_add(data_checksum, ch);
             }
         }
     }
     segment->decoded_data[pos] = '\0';
 
-    if (crc32(segment->decoded_data, segment->decoded_size) != checksum)
+    data_checksum = crc32_finish(data_checksum);
+    if (yenc_checksum != data_checksum)
         return -1;
     return 0;
 }
