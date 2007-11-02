@@ -36,7 +36,6 @@
 
 #include "global.h"
 #include "types.h"
-#include "options.h"
 #include "net.h"
 
 
