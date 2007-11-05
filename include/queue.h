@@ -3,17 +3,22 @@
 
 #include "types.h"
 
-
+/*!
+ * A structure which contains a reference to a segment. This item is referenced
+ * in the queue_list type
+ */
 typedef struct queue_item_s
 {
-    struct segment_s *segment;          // Reference to segment
-    struct server_s **failed_servers;   // Array with servers which failed
-    int num_failed_servers;             // Number of failed servers
-    struct queue_item_s *next;
-    struct queue_item_s *prev;
+    struct segment_s *segment;        //!< Reference to segment
+    struct server_s **failed_servers; //!< Array with servers which failed
+    int num_failed_servers;           //!< Number of failed servers
+    struct queue_item_s *next;        //!< Reference to the next queue_item
+    struct queue_item_s *prev;        //!< Reference to the previous queue_item
 } queue_item_t;
 
-
+/*!
+ * A queue with queue_item's.
+ */
 typedef struct queue_list_s
 {
     pthread_mutex_t mtx_queue;

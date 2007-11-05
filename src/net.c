@@ -123,7 +123,10 @@ int net_send(int sock, char *format, ...)
     va_start(argp, format);
     ret = vasprintf(&buffer, format, argp);
     va_end(argp);
-    
+
+    assert (buffer != NULL);
+    assert (ret > 0);
+        
 
     ret = send(sock, buffer, strlen(buffer), 0);
     

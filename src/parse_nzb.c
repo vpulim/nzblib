@@ -41,7 +41,7 @@ static inline int min(int a, int b) {
   return a < b ? a : b;
 }
 
-/*
+/*!
  * Parse an nzb file and return a post_t structure or NULL when an error
  * occured.
  */
@@ -103,7 +103,7 @@ post_t * parse_nzb(char *filename)
 }
 
 
-/*
+/*!
  * Called when a new element is encountered
  */
 void element_start(void *data, const char *name, const char **atts)
@@ -120,7 +120,7 @@ void element_start(void *data, const char *name, const char **atts)
         parse_group_element(archive, atts);
 }
 
-/*
+/*!
  * Called when the end of an element is encountered
  */
 void element_end(void *data, const char *name)
@@ -138,7 +138,7 @@ void element_end(void *data, const char *name)
 }
 
 
-/*
+/*!
  * Handle the data of an element. Note that his might be called with only a
  * chunk of data!
  */
@@ -194,7 +194,7 @@ void element_data(void *data, const XML_Char *s, int len)
     }
 }
 
-/*
+/*!
  * Parse the file element including its attributes and store it in
  * archive->last which is of type post_t
  */
@@ -231,7 +231,7 @@ void parse_file_element(archive_t *archive, const char **atts)
     
 }
 
-/*
+/*!
  * Parse the group element including its attributes and store it in
  * archive->last which is of type post_t
  */
@@ -245,7 +245,7 @@ void parse_group_element(archive_t *archive, const char **atts)
     post->groups[post->num_groups - 1] = NULL;
 }
 
-/*
+/*!
  * Parse the segment element including its attributes and the store it in
  * archive->last which is of type post_t. Also set the created segment as
  * archive->last_segment
@@ -288,7 +288,7 @@ void parse_segment_element(archive_t *archive, const char **atts)
 
 
 
-/*
+/*!
  * Try to find the filename in the subject. This method tries three different
  * subject 'layouts'.
  *  1. filename between ""

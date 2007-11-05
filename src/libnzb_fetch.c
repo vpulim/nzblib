@@ -36,7 +36,12 @@
 #include "parse_nzb.h"
 #include "nzb_fetch.h"
 #include "process.h"
+#include "server.h"
 
+
+/*!
+ * Initialize nzb_fetch
+ */
 nzb_fetch *nzb_fetch_init()
 {
     nzb_fetch *fetcher;
@@ -45,6 +50,9 @@ nzb_fetch *nzb_fetch_init()
     
     fetcher->queue = queue_list_create();
     fetcher->data_queue = queue_list_create();
+    
+    fetcher->priority_queues = malloc(sizeof(queue_list_t *));
+    fetcher->priority_queues[0] = fetcher->queue;
     
     fetcher->servers = NULL;
     
@@ -62,38 +70,61 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          int priority)
 {
     server_t *new_server, *server;
-
-    new_server = malloc(sizeof(server_t));
+    int required_queues;
+    int current_queues;
     
-    new_server->address = strdup(address);
-    new_server->port = port;
-    new_server->username = strdup(username);
-    new_server->password = strdup(password);
-    new_server->num_threads = threads;
-    new_server->priority = priority;
-    new_server->prev = NULL;
-    new_server->next = NULL;
-    new_server->queue = NULL;
+    if (priority < 0)
+    {
+        printf("Error: priority should be > 0\n");
+        return -1;
+    }
+
+    
+
+    new_server = server_create(address, port, username, password,
+                               threads, priority);
+    
     
     // Insert into server linked list
     server = fetcher->servers;
     
-    if(fetcher->servers == NULL)
+    if(server == NULL)
         fetcher->servers = new_server;
     else
     {
         // Append server at the end
         while(server->next != NULL)
-        {
             server = server->next;
-        }
+        
         server->next = new_server;
         new_server->prev = server;
         
     }
     
+    required_queues = server_calculate_priorities(fetcher);
+    
+    if (required_queues > 1)
+    {
+        printf("Require an extra priority queues\n");
+        
+        current_queues = sizeof(fetcher->priority_queues) /
+                            sizeof(queue_list_t *);
+        
+        if (required_queues > current_queues)
+        {
+            printf("Creating extra priority queues: %d\n", required_queues);
+            fetcher->priority_queues = realloc(fetcher->priority_queues,
+                                               sizeof(queue_list_t *) *
+                                               required_queues);
+            
+            printf("%d\n", new_server->priority);
+            fetcher->priority_queues[new_server->priority] = queue_list_create();
+        }
+    }
     return 0;
 }
+
+
 
 int nzb_fetch_connect(nzb_fetch *fetcher)
 {
@@ -118,8 +149,7 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
             server->threads[i].thread_num = i + connections;
             server->threads[i].server = server;
             
-            server->threads[i].queues = malloc(sizeof(queue_list_t *));
-            server->threads[i].queues[0] = fetcher->queue;
+            server->threads[i].queues = fetcher->priority_queues;
             server->threads[i].data_queue = fetcher->data_queue;
             
             pthread_create( &server->threads[i].thread_id,
@@ -163,7 +193,7 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
 {
     post_t *post_item;
     queue_item_t  *queue_item;
-    
+    int i;
     printf("Parsing %s\n", file->filename);
     
     printf("Adding post to queue\n");
@@ -175,11 +205,34 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
     // First add all the first segments of each post
     for(post_item = file->posts; post_item != NULL; post_item = post_item->next)
     {
-        printf("msgid: %s\n", post_item->segments[0]->messageid);
+        if (file_chunk_exists(post_item->segments[0], file))
+        {
+            post_item->segments[0]->complete = 1;
+            continue;
+        }
+        
         queue_item = queue_item_create(post_item->segments[0]);
         queue_list_append(fetcher->queue, queue_item);
     }
     printf("Done\n");
+
+    // Then add all the other segments of each post
+    for(post_item = file->posts; post_item != NULL; post_item = post_item->next)
+    {
+        if (post_item->num_segments == 1)
+            continue;
+            
+        for (i = 1; i < post_item->num_segments; i++)
+        {
+            if (file_chunk_exists(post_item->segments[i], file))
+            {
+                post_item->segments[i]->complete = 1;
+                continue;
+            }
+            queue_item = queue_item_create(post_item->segments[i]);
+            queue_list_append(fetcher->queue, queue_item);
+        }
+    }
     
     // Then add the rest
     // TODO

@@ -37,7 +37,7 @@
 #include "net.h"
 #include "yenc.h"
 
-/*
+/*!
  * Connect to the NTTP server and check for status code 200 or 201. Return 0
  * if successfull.
  */
@@ -59,7 +59,7 @@ int nttp_connect(struct connection_thread *ct)
 }
 
 
-/*
+/*!
  * Authenticate on the NTTP server, except if the username or password are
  * null.
  */
@@ -101,7 +101,7 @@ int nttp_authenticate(int sock, char *username, char *password)
     return 0;
 }
 
-/*
+/*!
  * Convert the first three characters in the buffer to an integer. This should
  * be the status code for messages from the NTTP server.
  */
@@ -119,7 +119,7 @@ int nttp_get_status_code(char *buffer)
 }
 
 
-/*
+/*!
  * Logout and cleanup the socket.
  */
 void nttp_disconnect(int sock)
@@ -130,7 +130,7 @@ void nttp_disconnect(int sock)
 }
 
 
-/*
+/*!
  * Select a newsgroup on the NTTP server.
  * TODO: Check if the group is already selected before issueing the command?
  */
@@ -158,7 +158,7 @@ int nttp_select_group(int sock, char *group)
 }
 
 
-/*
+/*!
  * Retrieve an segment (message) from the NTTP server with the messageid
  * stored in the segment structure (segment->message). The resulting data will
  * be saved as segment->data and the number of bytes in segment->bytes
@@ -215,7 +215,7 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
 }
 
 
-/*
+/*!
  * The thread function which handles the connection with the NTTP Server.
  * This thread is started from libnzbleech.c.
  */
@@ -255,7 +255,7 @@ exit:
 }
     
     
-/*
+/*!
  * Process all items on the queue and wait for new items when the queue is
  * empty. Processed items are put on the queue for the data processor
  */
@@ -268,6 +268,12 @@ void nttp_process_queue(struct connection_thread *ct)
     
     while(1)
     {
+        if (ct->queues[ct->server->priority] == NULL)
+        {
+            printf("No existing queue for server %s with priority %d\n",
+                   ct->server->address, ct->server->priority);
+            assert(0);
+        }
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
@@ -298,6 +304,11 @@ void nttp_process_queue(struct connection_thread *ct)
 }
 
 
+/*!
+ * Handle retrieve errors by trying to place the queue_item on another queue
+ * or trying it on the same priority queue but leave it for another server
+ * which is using the same priority queue
+ */
 int nttp_handle_retrieve_error(struct connection_thread *ct,
                                queue_item_t *queue_item)
 {
@@ -308,6 +319,10 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     
     int same_prio_servers = 0;
     int total_servers = 0;
+    
+    printf("Error while retrieving %s from %s\n",
+           queue_item->segment->messageid, server->address);
+    
     
     // Find first server:
     while (server_head->prev != NULL)
@@ -337,6 +352,7 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
         // There are more servers with the same priority push it on
         // the queue again.
         
+        printf("Prepending item on same queue for other server\n");
         queue_list_prepend(queue, queue_item);
         return 1;
     }
@@ -348,7 +364,9 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
         {
             if (server->priority > current_server->priority)
             {
-                queue_item_move(server->queue, queue_item);
+                printf("Moving item to other queue with prio %d\n", server->priority);
+                printf("Server: %s\n", server->address);
+                queue_item_move(ct->queues[server->priority], queue_item);
                 return 1;
             }
         }

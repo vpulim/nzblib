@@ -19,6 +19,7 @@ typedef struct nzb_fetch_s
     struct server_s *servers;
     struct queue_list_s *queue;
     struct queue_list_s *data_queue;
+    struct queue_list_s **priority_queues;
     struct nzb_file_s *file;
     pthread_t process_thread_id;
 } nzb_fetch;

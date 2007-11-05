@@ -32,8 +32,11 @@
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <stdlib.h>
-     
+#include <assert.h>
+
 #include "nzb_fetch.h"
+#include "file.h"
+#include "global.h"
 
 
 char *file_get_path(char *path)
@@ -56,48 +59,166 @@ char *file_get_path(char *path)
 }
 
 /*
- * Write data to the given filename. Return 0 on success < 0 on error
+ * Write the chunk to the temporary directory, appended with the segment
+ * number. Return 0 on success < 0 on error
  */
-int file_write_data(char *filename, char *data, int size)
+int file_write_chunk(segment_t *segment, nzb_file *file)
 {
+    char *filename;
+    int ret;
     FILE *fp;
+    
+    filename = file_get_chunk_filename(segment, file);
+    
     fp = fopen(filename, "w");
     if(fp != NULL)
     {
-        fwrite(data, 1, size, fp);
+        fwrite(segment->decoded_data, 1, segment->decoded_size, fp);
         fclose(fp);
     }
     else
     {
         perror("Error while saving file");
+        free(filename);
         return -1;
     }
     
-    return 0;
-}
-
-int file_write_chunk(segment_t *segment, nzb_file *file)
-{
-
-    char *path;
-    char *filename;
-    int ret;
-    
-    path = file_get_path(file->temporary_path);
-    
-    if (path == NULL)
-        return -1;
-    
-    asprintf(&filename, "%s/%s.segment.%03d", path,
-             segment->fileinfo->filename, segment->number);
-    
-    ret = file_write_data(filename, segment->decoded_data,
-                          segment->decoded_size);
     free(filename);
     
     if (ret < 0)
         return -1;
     
+    return 0;
+}
+
+int file_write_raw(segment_t *segment, nzb_file *file)
+{
+    char *filename;
+    int ret;
+    FILE *fp;
+
+
+    asprintf(&filename, "%s.segment.%03d", 
+             segment->post->fileinfo->filename, segment->number);
+
+    fp = fopen(filename, "w");
+    if(fp != NULL)
+    {
+        fwrite(segment->data, 1, segment->bytes, fp);
+        fclose(fp);
+    }
+    else
+    {
+        perror("Error while saving file");
+        free(filename);
+        return -1;
+    }
+    
+    free(filename);
+    
+    if (ret < 0)
+        return -1;
+    
+    return 0;
+}
+
+char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
+{
+    char *filename;
+    char *path;
+    
+    path = file_get_path(file->temporary_path);
+    
+    if (path == NULL)
+        return NULL;
+    
+    assert(segment->post->fileinfo->filename != NULL);
+    
+    asprintf(&filename, "%s/%s.segment.%03d", path,
+             segment->post->fileinfo->filename, segment->number);
+    
+    //free(path);
+    return filename;
+}
+
+
+int file_combine(post_t * post, nzb_file *file)
+{
+    char *path;
+    char *filename;
+    char buffer[BUFFER_SIZE];
+    FILE *fp_chunk, *fp_target;
+    int i;
+    int bytes;
+    
+    // Open the target file
+    path = file_get_path(file->storage_path);
+    if (path == NULL)
+    {
+        perror("Error while writing file");
+        assert(0);
+        return -1;
+    }
+    asprintf(&filename, "%s/%s", path, post->fileinfo->filename);
+    
+    fp_target = fopen(filename, "w");
+
+    free(filename);
+    //free(path);
+    
+    path = file_get_path(file->temporary_path);
+    for (i = 0; i < post->num_segments; i++)
+    {
+        assert(post->segments[i]->complete != 0);
+        
+        // Create the filename
+        asprintf(&filename, "%s/%s.segment.%03d", path,
+                post->fileinfo->filename, post->segments[i]->number);
+        
+        fp_chunk = fopen(filename, "r");
+
+        // The chunk went missing, return -1 so that the process thread can
+        // identify the problem.
+        if (fp_chunk == NULL)
+        {
+            printf("::: %s\n", filename);
+            perror("Unable to open chunk");
+            free(filename);
+            fclose(fp_target);
+            //free(path);
+            return -1;
+        }
+        free(filename);
+        filename = NULL;
+        
+        while(!feof(fp_chunk))
+        {
+            bytes = fread(&buffer, 1, BUFFER_SIZE-1, fp_chunk);
+            fwrite(&buffer, 1, bytes, fp_target);
+        }
+        fclose(fp_chunk);
+    }
+    
+    //free(path);
+    fclose(fp_target);
+    return 0;
+}
+
+
+int file_chunk_exists(segment_t *segment, nzb_file *file)
+{
+    char *filename;
+    struct stat buf;
+    int ret;
+
+    filename = file_get_chunk_filename(segment, file);
+
+    ret = stat(filename, &buf);
+    free(filename);
+    
+    if(ret == 0)
+        return 1;
+
     return 0;
 }
 

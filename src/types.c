@@ -37,8 +37,8 @@ segment_t * types_create_segment()
     segment->nzb_bytes = 0;
     segment->decoded_data = NULL;
     segment->decoded_size = 0;
-    segment->fileinfo = types_create_fileinfo();
     segment->messageid = NULL;
+    segment->complete = 0;
     return segment;
 }
 
@@ -62,7 +62,9 @@ post_t * types_create_post()
     
 }
 
-
+/*
+ * Initialize a new fileinfo structure
+ */
 fileinfo_t * types_create_fileinfo()
 {
     fileinfo_t * fileinfo;
@@ -76,19 +78,9 @@ fileinfo_t * types_create_fileinfo()
     return fileinfo;
 }
 
-//void types_postlist_init(postlist_t *postlist)
-//{
-//    pthread_mutex_init(&postlist->mtx_post, NULL);
-//    pthread_mutex_init(&postlist->mtx_data, NULL);
-//    pthread_mutex_init(&postlist->mtx_cond, NULL);
-//    pthread_cond_init(&postlist->cond_data, NULL);
-//    postlist->datasegments_first = NULL;
-//    postlist->datasegments_last = NULL;
-//    
-//    postlist->num_total_posts = 0;
-//    postlist->num_posts_left  = 0;
-//}
-
+/*
+ * Free segment
+ */
 void types_free_segment(segment_t *segment)
 {
     if(segment->data != NULL)
@@ -108,9 +100,12 @@ void types_free_post(post_t *post)
     if(post == NULL)
         return;
 
-    for(i = 0; i < post->num_groups; i++)
+    for (i = 0; i < post->num_groups; i++)
         free(post->groups[i]);
 
+    for (i = 0; i < post->num_segments; i++)
+        types_free_segment(post->segments[i]);
+        
     free(post->subject);
     free(post);
 }

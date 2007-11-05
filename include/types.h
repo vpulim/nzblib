@@ -8,39 +8,44 @@
 #define FILE_COMPLETE   0x01
 
 
-
-
-
+/*!
+ * Fileinfo type contains the filename and other unused variables
+ */
 typedef struct fileinfo_s
 {
-    char *filename;
+    char *filename;         //!< Filename
     int num_segments;
     
-    int *part_status;
     unsigned int flags;
     
 } fileinfo_t;
 
-
+/*!
+ * A segment represents one article on the NTTP server.
+ *
+ * TODO: decoded_size and bytes should be of type size_t;
+ */
 typedef struct segment_s
 {
-    int already_exists;     // Flag TODO BITMASK
-    int number;             // Segment number as in the nzb
-    int nzb_bytes;          // Bytes according to the nzb file.    
-    char *messageid;
+    int already_exists;     //!< Flag TODO BITMASK
+    int number;             //!< Segment number as in the nzb
+    int nzb_bytes;          //!< Bytes according to the nzb file.    
+    char *messageid;        //!< The message id 
+    
+    int complete;           //!< Set to 1 is complete 0 otherwise
 
-    int bytes;              // Size of the raw data 
-    char *data;             // Raw data
-    int decoded_size;       // Size of the decoded data
-    char *decoded_data;     // Decoded data
+    int bytes;              //!< Size of the raw data 
+    char *data;             //!< Raw data
+    size_t decoded_size;    //!< Size of the decoded data
+    char *decoded_data;     //!< Decoded data
 
-    fileinfo_t *fileinfo;   //
-
-    struct post_s *post;    // Reference to post which segment belongs to
-    struct segment_s *next; // Remove me ?
+    struct post_s *post;    //!< Reference to post which segment belongs to
 } segment_t;
 
 
+/*!
+ * A post can exists out of multiple segments and generaly represents one file.
+ */
 typedef struct post_s
 {
     int id;
@@ -57,33 +62,15 @@ typedef struct post_s
 } post_t;
 
 
-
-//typedef struct postlist_s
-//{
-//    pthread_mutex_t mtx_post;
-//    pthread_mutex_t mtx_data;
-//    pthread_mutex_t mtx_cond;
-//
-//    pthread_cond_t cond_data;       // Protected by mtx_cond
-//
-//    post_t *post;                   // Protected by mtx_post
-//    int num_total_posts;
-//    int num_posts_left;
-//    
-//    segment_t *datasegments_first;  // Protected by mtx_data
-//    segment_t *datasegments_last;   // Protected by mtx_data
-//
-//} postlist_t;
-
 struct connection_thread
 {
     int thread_num;
     int ready;
-    
-    int sock;
-    
-    struct queue_list_s **queues;       // Array of queues with empy segments
-    struct queue_list_s *data_queue;    // Pointer to queue with full segments
+
+    int sock;                         //!< Socket
+
+    struct queue_list_s **queues;     //!< Array of queues with empy segments
+    struct queue_list_s *data_queue;  //!< Pointer to queue with full segments
     pthread_t thread_id;
     struct server_s *server;
     //postlist_t *postlist;
@@ -92,24 +79,23 @@ struct connection_thread
 
 typedef struct server_s
 {
-    char *username;
-    char *password;
+    char *username;             //!< Username to authenticate with
+    char *password;             //!< Password to authenticate with
     
-    int priority;
-    int num_threads;
+    int priority;               //!< Priority of the server, the lower the better
+    int user_priority;          //!< Priority as specified by client
+    int num_threads;            //!< Number of connection threads
     
-    int port;
-    char *address;
+    int port;                   //!< NTTP server port
+    char *address;              //!< NTTP server address
     
-    queue_list_t *queue;
-    struct server_s *next;
-    struct server_s *prev;
+    queue_list_t *queue;        //!< Reference to the queue used for this server
+    struct server_s *next;      //!< Reference to the next server
+    struct server_s *prev;      //!< Referecen to the previous server
     
-    struct sockaddr_in server_addr;
-    
-    struct connection_thread *threads;
+    struct sockaddr_in server_addr;     //!< sockaddr_in structure
+    struct connection_thread *threads;  //!< Array to the connection_threads used by the connections
 } server_t;
-
 
 
 

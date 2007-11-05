@@ -33,7 +33,7 @@
 #include "types.h"
 #include "queue.h"
 
-/*
+/*!
  * Create a queue item
  */
 queue_item_t * queue_item_create(segment_t *segment)
@@ -49,17 +49,18 @@ queue_item_t * queue_item_create(segment_t *segment)
     return queue_item;
 }
 
+/*!
+ * Free the given queue_item
+ */
 void queue_item_destroy(queue_item_t *queue_item)
 {
-    types_free_segment(queue_item->segment);
-    
     if (queue_item->failed_servers != NULL)
         free(queue_item->failed_servers);
         
     free(queue_item);
 }
 
-/*
+/*!
  * Mark that the segment could not be downloaded from the given server
  */
 void queue_item_set_failed(queue_item_t *queue_item, server_t *server)
@@ -74,7 +75,7 @@ void queue_item_set_failed(queue_item_t *queue_item, server_t *server)
 }
 
 
-/*
+/*!
  * Check if the given queue_item has failed on the given server before
  */
 int queue_item_is_failed(queue_item_t *queue_item, server_t *server)
@@ -95,13 +96,21 @@ int queue_item_is_failed(queue_item_t *queue_item, server_t *server)
     return 0;
 }
 
+/*!
+ * Move the queue_item to another queue_list
+ */
 void queue_item_move(queue_list_t *queue, queue_item_t *queue_item)
 {
-    free(queue_item->failed_servers);
+    if (queue_item->failed_servers != NULL)
+    {
+        free(queue_item->failed_servers);
+        queue_item->failed_servers = NULL;
+    }
     queue_item->num_failed_servers = 0;
+    queue_list_prepend(queue, queue_item);
 }
 
-/*
+/*!
  * Create a queue list
  */
 queue_list_t * queue_list_create()
@@ -118,7 +127,9 @@ queue_list_t * queue_list_create()
     return queue_list;
 }
 
-
+/*!
+ * Block until a signal is received that there is new data on the queue_list
+ */
 void queue_list_sleep(queue_list_t *queue)
 {
     MTX_LOCK(&queue->mtx_cond);
@@ -126,7 +137,7 @@ void queue_list_sleep(queue_list_t *queue)
     MTX_UNLOCK(&queue->mtx_cond);
 }
 
-/*
+/*!
  * Shift an item from the begin of the queue list which is not failed on this server.
  */
 queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
@@ -154,15 +165,15 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
     assert(queue_item != NULL);
     
     
-    //if(server != NULL)
-    //{
-    //    do
-    //    {
-    //        if(queue_item_is_failed(queue_item, server) == 0)
-    //            break;
-    //    }
-    //    while((queue_item = queue_item->next));
-    //}
+    if(server != NULL)
+    {
+        do
+        {
+            if(queue_item_is_failed(queue_item, server) == 0)
+                break;
+        }
+        while((queue_item = queue_item->next));
+    }
     
     // Break out the queue item from the linked list
     if(queue_item->prev != NULL)
@@ -178,8 +189,9 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
 }
 
 
-/* THIS FUNCTION IS CURRENTLY BROKEN!!!!
+/*!
  * Pop an item from end of the queue list which is not failed on this server.
+ * TODO: Broken
  */
 queue_item_t * queue_list_pop(queue_list_t  *queue_list, server_t *server)
 {
@@ -207,7 +219,7 @@ queue_item_t * queue_list_pop(queue_list_t  *queue_list, server_t *server)
 
 
 
-/*
+/*!
  * Insert an item at the end of the queue list
  */
 void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
@@ -236,18 +248,25 @@ void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
         
 }
 
-/*
+/*!
  * Insert an item at the start of the queue list
  */
 void queue_list_prepend(queue_list_t *queue_list, queue_item_t *queue_item)
-{
-    assert(0); // THis function is not workig atm
+{    
+    // Clean previous linked list vars
+    queue_item->next = NULL;
+    queue_item->prev = NULL;
+    
     MTX_LOCK(&queue_list->mtx_queue);
+
     queue_item->next = queue_list->first;
     queue_list->first = queue_item;
+    
     MTX_UNLOCK(&queue_list->mtx_queue);
+    
 
-    MTX_LOCK(&queue_list->mtx_cond); 
+    MTX_LOCK(&queue_list->mtx_cond);
     pthread_cond_signal(&queue_list->cond_item);
     MTX_UNLOCK(&queue_list->mtx_cond);
+        
 }

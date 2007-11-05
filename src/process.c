@@ -35,12 +35,15 @@
 #include "yenc.h"
 #include "file.h"
 
+#include "process.h"
 
 void *process_data_queue(void *arg)
 {
     nzb_fetch *fetcher = (nzb_fetch *)arg;
     queue_item_t *queue_item;
     queue_list_t *queue = fetcher->data_queue;
+    segment_t *segment;
+    
     int ret;
     
     printf("Starting process_data_queue thread\n");
@@ -49,11 +52,10 @@ void *process_data_queue(void *arg)
     {
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, NULL);
-    
-        printf("Found queue_item\n");
-    
-        ret = yenc_decode(queue_item->segment);
+        segment = queue_item->segment;
 
+        //file_write_raw(segment, fetcher->file);
+        ret = yenc_decode(segment);
 
         if (ret != 0)
         {
@@ -64,16 +66,42 @@ void *process_data_queue(void *arg)
             continue;
         }
         
-        printf("yEnc OK\n");
-        
-
-        ret = file_write_chunk(queue_item->segment, fetcher->file);
-        
+        ret = file_write_chunk(segment, fetcher->file);
+        free(segment->data);
+        segment->data = NULL;
+        segment->bytes = 0;
         if (ret < 0)
             printf("Unable to store file\n");
         
+        segment->complete = 1;
+
+        ret = process_check_post_status(segment->post);
+
+        if (ret == 0)
+        {
+            file_combine(segment->post, fetcher->file);
+            printf("Completed download of %s\n",
+                   segment->post->fileinfo->filename);
+            //types_free_post(segment->post);
+        }
+        free(segment->decoded_data);
+        segment->decoded_data = NULL;
+        segment->decoded_size = 0;
         queue_item_destroy(queue_item);
-        
     }   
     pthread_exit(NULL);
+}
+
+
+int process_check_post_status(post_t *post)
+{
+    int i;
+    
+    // Return -1 when an incomplete segment is found
+    for (i = 0; i < post->num_segments; i++)
+        if (post->segments[i]->complete != 1)
+            return -1;
+
+    // Complete    
+    return 0;
 }

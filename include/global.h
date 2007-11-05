@@ -1,7 +1,7 @@
 #ifndef _GLOBALS_H
 #define _GLOBALS_H
 
-#define BUFFER_SIZE 8000
+#define BUFFER_SIZE 8196
 
 extern int num_locked;
 
