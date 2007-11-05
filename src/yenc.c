@@ -130,6 +130,8 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
 {
     char *p = line;
     char *c;
+    fileinfo_t * fileinfo;
+    
     
     p += 8;
     if((c = strstr(line, "part=")))
@@ -137,7 +139,7 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
         c += 5;
         p = index(c, ' ');
         *p = '\0';
-        segment->number = strtol(p, (char **)NULL, 10);
+        segment->number = strtol(c, (char **)NULL, 10);
         *p = ' ';
     }
     
@@ -153,13 +155,15 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
     if((c = strstr(line, "name=")))
     {
         c += 5;
-        if(segment->fileinfo->filename == NULL ||
-           strcmp(c, segment->fileinfo->filename) != 0)
+        fileinfo = segment->post->fileinfo;
+        
+        if(fileinfo->filename == NULL || strcmp(c, fileinfo->filename) != 0)
         {
             // Force the use of the filename in the yenc message 
-            if(segment->fileinfo->filename != NULL)
-                free(segment->fileinfo->filename);
-            segment->fileinfo->filename = strdup(c);
+            if(fileinfo->filename != NULL)
+                free(fileinfo->filename);
+                
+            fileinfo->filename = strdup(c);    
         }
     }
             
@@ -239,6 +243,7 @@ int main(int argc, char **argv)
     FILE *fp;
     int ret, bytes;
     segment_t *segment;
+    post_t *post;
     
     char *data;
 
@@ -257,17 +262,17 @@ int main(int argc, char **argv)
         bytes = fread(data, sizeof(char), 2048576, fp);
         printf("Read %d bytes\n", bytes);
         fclose(fp);
-    
+        post = types_create_post();
+        post->fileinfo = types_create_fileinfo();
         segment = types_create_segment();
         segment->data = data;
         segment->bytes = bytes;
+        segment->post = post;
         
         ret = yenc_decode(segment);
         printf("yenc_decode() returned %d\n", ret);
+        printf("Segment number: %d\n", segment->number);
         
-        
-        types_free_segment(segment);
-        types_free_fileinfo(segment->fileinfo);
     }
     
     return 0;
