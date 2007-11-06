@@ -29,7 +29,7 @@
 
 #include <pthread.h>
 
-#include "types.h"
+#include "post.h"
 #include "server.h"
 #include "queue.h"
 

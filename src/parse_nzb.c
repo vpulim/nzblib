@@ -29,7 +29,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "types.h"
+#include "post.h"
 #include "parse_nzb.h"
 
 

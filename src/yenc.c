@@ -34,7 +34,7 @@
 #include "yenc.h"
 
 #ifdef DEBUG
-#include "types.h"
+#include "post.h"
 
 #endif
 

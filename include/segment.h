@@ -35,7 +35,7 @@
  * TODO: decoded_size and bytes should be of type size_t;
  */
 
-#include "types.h"
+#include "post.h"
 
 typedef struct segment_s
 {

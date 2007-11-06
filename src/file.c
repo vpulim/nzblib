@@ -184,6 +184,7 @@ int file_combine(post_t * post, nzb_file *file)
         }
         
         // Create the filename
+        // TODO change ->number in yenc_part
         asprintf(&filename, "%s/%s.segment.%03d", path,
                 post->fileinfo->filename, post->segments[i]->number);
         

@@ -31,7 +31,7 @@
 
 #include "net.h"
 #include "nttp_connection.h"
-#include "types.h"
+#include "post.h"
 #include "queue.h"
 #include "file.h"
 #include "parse_nzb.h"

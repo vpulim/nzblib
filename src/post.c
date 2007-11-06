@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 
-#include "types.h"
+#include "post.h"
 #include "segment.h"
 
 

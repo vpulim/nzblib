@@ -30,7 +30,7 @@
 #include <stdio.h>
 
 #include "global.h"
-#include "types.h"
+#include "post.h"
 #include "queue.h"
 
 /*!

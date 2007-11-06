@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "types.h"
+#include "post.h"
 #include "net.h"
 #include "queue.h"
 #include "nttp_connection.h"
