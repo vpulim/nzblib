@@ -57,9 +57,9 @@ void *process_data_queue(void *arg)
         //file_write_raw(segment, fetcher->file);
         ret = yenc_decode(segment);
 
-        if (ret != 0)
+        if (ret != YENC_OK)
         {
-            printf("yEnc decode error..\n");
+            segment_status_set(segment, SEGMENT_ERROR);
             
             // TODO: Free queue_item
             queue_item_destroy(queue_item);
@@ -73,8 +73,8 @@ void *process_data_queue(void *arg)
         if (ret < 0)
             printf("Unable to store file\n");
         
-        segment->complete = 1;
-
+        segment_status_set(segment, SEGMENT_COMPLETE);
+        
         ret = process_check_post_status(segment->post);
 
         if (ret == 0)
@@ -97,11 +97,13 @@ int process_check_post_status(post_t *post)
 {
     int i;
     
-    // Return -1 when an incomplete segment is found
+    // Return -1 when we have not tried to download all segments
     for (i = 0; i < post->num_segments; i++)
-        if (post->segments[i]->complete != 1)
+        if (post->segments_status[i] == SEGMENT_NEW)
+        {
+            printf("Found missing %d\n", i);
             return -1;
-
-    // Complete    
+        }
+    // Tried all posts    
     return 0;
 }

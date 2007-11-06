@@ -53,15 +53,28 @@ post_t * types_create_post()
     post->segments = NULL;
     post->num_segments = 0;
     post->num_groups    = 0;
+    post->groups = NULL;
     
     post->fileinfo = NULL;
-    
+    post->segments_status = NULL;
     post->next = NULL;
     post->prev = NULL;
     return post;
     
 }
 
+
+inline void segment_status_set(segment_t *segment, int flag)
+{
+    segment->post->segments_status[segment->index] = flag;
+}
+
+inline int segment_status_get(segment_t *segment)
+{
+    return segment->post->segments_status[segment->index];
+}
+
+    
 /*
  * Initialize a new fileinfo structure
  */

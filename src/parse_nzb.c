@@ -166,11 +166,13 @@ void element_data(void *data, const XML_Char *s, int len)
     if(archive->in_segment)
     {
         segment = archive->last_segment;
+
         if (segment->messageid != NULL)
             pos = strlen(segment->messageid);
-            
+
         segment->messageid = realloc(segment->messageid,
-                                     sizeof(char) * (pos + len));
+                                     sizeof(char) * (pos + len + 1));
+
         memcpy(segment->messageid + pos, s, len);
         segment->messageid[pos + len] = '\0';
     }
@@ -241,7 +243,7 @@ void parse_group_element(archive_t *archive, const char **atts)
     
     archive->in_group = 1;
     post->num_groups++;
-    post->groups = realloc(post->groups, sizeof(char) * post->num_groups);
+    post->groups = realloc(post->groups, sizeof(char *) * post->num_groups);
     post->groups[post->num_groups - 1] = NULL;
 }
 
@@ -262,6 +264,7 @@ void parse_segment_element(archive_t *archive, const char **atts)
     // Create segment block
     segment = types_create_segment();
     assert(segment->messageid == NULL);
+    assert(post != NULL);
     
     // Get attributes
     while(atts[i])
@@ -277,12 +280,19 @@ void parse_segment_element(archive_t *archive, const char **atts)
     }
     
     post->segments = realloc(post->segments,
-                             sizeof(segment_t *) * post->num_segments + 1);
-    post->segments[post->num_segments] = segment;
-    post->num_segments++;
+                             sizeof(segment_t *) * (post->num_segments + 1));
+    
+    
+    post->segments_status = realloc((char *)post->segments_status,
+                                    sizeof(int) * (post->num_segments + 1));
+    
+    segment->index = post->num_segments;
+    
+    post->segments[segment->index] = segment;
+    post->segments_status[segment->index] = SEGMENT_NEW;
     
     segment->post = post;
-    
+    post->num_segments++;
     archive->last_segment = segment;    
 }
 
@@ -373,6 +383,8 @@ int main(int argc, char **argv)
         }
         for(i = 0; i < file->num_segments; i++)
         {
+            assert(file->segments[i]->messageid != NULL);
+            printf("%d ", file->segments[i]->number);
             printf("\t%s\n", file->segments[i]->messageid);
         }
         printf("\n");

@@ -113,8 +113,9 @@ int yenc_decode(segment_t *segment)
 
     data_checksum = crc32_finish(data_checksum);
     if (yenc_checksum != data_checksum)
-        return -1;
-    return 0;
+        return YENC_CRC_ERROR;
+    
+    return YENC_OK;
 }
 
 /*

@@ -223,32 +223,58 @@ void *nttp_connection(void *arg)
 {
     struct connection_thread *ct = (struct connection_thread *)arg;
     int ret = 0;
+    int reconnect_tries = 0;
     
-
-    
-    printf("[Thread %d] Connecting to server %s (priority = %d)\n",
-           ct->thread_num, ct->server->address, ct->server->priority);
-    
-    if (nttp_connect(ct) != 0)
+    do
     {
-        printf("[Thread %d] Unable to open connection to %s\n",
-               ct->thread_num, ct->server->address);
+        printf("[Thread %d] Connecting to server %s (priority = %d)\n",
+               ct->thread_num, ct->server->address, ct->server->priority);
+        
+        if (nttp_connect(ct) != 0)
+        {
+            printf("[Thread %d] Unable to open connection to %s\n",
+                   ct->thread_num, ct->server->address);
+        
+            goto reconnect;
+        }
     
-        goto exit;
-    }
+        ret = nttp_authenticate(ct->sock,
+                                ct->server->username,
+                                ct->server->password);
+    
+        if (ret != 0)
+            goto reconnect;
+        
+        
+        // At this point we have a connection to the server and are ready to
+        // retrieve data.
+        ret = nttp_process_queue(ct);
+        
+        if (ret > 0)
+            goto exit;
+    
+        // When here we have connected successfully and authenticate also
+        // Thus we lost the connection due to other reasons, reset the
+        // reconnect_tries
+        reconnect_tries = 0;
+        
+    reconnect:
+        
+        if (reconnect_tries > 3)
+        {
+            printf("[Thread %d] Giving up on server %s\n",
+                   ct->thread_num, ct->server->address);
+            goto exit;
+        }
 
-    ret = nttp_authenticate(ct->sock,
-                            ct->server->username,
-                            ct->server->password);
+        reconnect_tries++;
 
-    if (ret != 0)
-        goto exit;
-    
-    
-    // At this point we have a connection to the server and are ready to
-    // retrieve data.
-    nttp_process_queue(ct);
- 
+        printf("[Thread %d] Reonnecting to server %s in 60 seconds (try %d)\n",
+               ct->thread_num, ct->server->address, reconnect_tries);
+        sleep(60);
+
+    } while (1);
+
 exit:
  
     pthread_exit(NULL);
@@ -259,7 +285,7 @@ exit:
  * Process all items on the queue and wait for new items when the queue is
  * empty. Processed items are put on the queue for the data processor
  */
-void nttp_process_queue(struct connection_thread *ct)
+int nttp_process_queue(struct connection_thread *ct)
 {
     queue_list_t *queue = ct->queues[ct->server->priority];
     queue_item_t *queue_item;
@@ -277,7 +303,7 @@ void nttp_process_queue(struct connection_thread *ct)
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
-        printf("[Thread %d] queue_item : %s\n", ct->thread_num, queue_item->segment->messageid);
+        printf("[Thread %d] Downloading segment %d of %s\n", ct->thread_num, queue_item->segment->number, queue_item->segment->post->fileinfo->filename);
         
         // Select group if the correct one isn't selected
         // We should iterate the groups if the first one isn't avail
@@ -288,19 +314,28 @@ void nttp_process_queue(struct connection_thread *ct)
             current_group = queue_item->segment->post->groups[0];
         }
         
-        if( nttp_retrieve_segment(ct->sock, queue_item->segment) < 0)
+
+        ret = nttp_retrieve_segment(ct->sock, queue_item->segment);
+        if (ret < 0)
         {
             // Error retrieving segment
             
             ret = nttp_handle_retrieve_error(ct, queue_item);
-            printf("nttp_handle_retrieve_error -> %d\n", ret);
+            if (ret < 0)
+            {
+                printf("Giving up on segment\n");
+                segment_status_set(queue_item->segment, SEGMENT_ERROR);
+            } else
+            {
+                printf("Retrying it somehow\n");
+            }
             continue;
-            
         }
         
         queue_list_append(ct->data_queue, queue_item);
     }
-
+    
+    return 0;
 }
 
 

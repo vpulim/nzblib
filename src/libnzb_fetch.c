@@ -198,16 +198,23 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
     
     printf("Adding post to queue\n");
     
-    
     fetcher->file = file;
-    
     
     // First add all the first segments of each post
     for(post_item = file->posts; post_item != NULL; post_item = post_item->next)
     {
+        if (file_complete_exists(post_item, file))
+        {
+            printf("Found complete file: %s\n", post_item->fileinfo->filename);
+            if (post_item->prev != NULL)
+                post_item->prev->next = post_item->next;
+                
+            continue;   
+        }
         if (file_chunk_exists(post_item->segments[0], file))
         {
             post_item->segments[0]->complete = 1;
+            segment_status_set(post_item->segments[0], SEGMENT_COMPLETE);
             continue;
         }
         
@@ -227,6 +234,7 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
             if (file_chunk_exists(post_item->segments[i], file))
             {
                 post_item->segments[i]->complete = 1;
+                segment_status_set(post_item->segments[i], SEGMENT_COMPLETE);
                 continue;
             }
             queue_item = queue_item_create(post_item->segments[i]);

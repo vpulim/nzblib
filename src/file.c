@@ -141,6 +141,20 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     return filename;
 }
 
+char * file_get_complete_filename(post_t *post, nzb_file *file)
+{
+    char *path;
+    char *filename;
+    path = file_get_path(file->storage_path);
+    if (path == NULL)
+    {
+        assert(0);
+        return -1;
+    }
+    asprintf(&filename, "%s/%s", path, post->fileinfo->filename);
+    
+    return filename;
+}
 
 int file_combine(post_t * post, nzb_file *file)
 {
@@ -152,14 +166,7 @@ int file_combine(post_t * post, nzb_file *file)
     int bytes;
     
     // Open the target file
-    path = file_get_path(file->storage_path);
-    if (path == NULL)
-    {
-        perror("Error while writing file");
-        assert(0);
-        return -1;
-    }
-    asprintf(&filename, "%s/%s", path, post->fileinfo->filename);
+    filename = file_get_complete_filename(post, file);
     
     fp_target = fopen(filename, "w");
 
@@ -169,7 +176,11 @@ int file_combine(post_t * post, nzb_file *file)
     path = file_get_path(file->temporary_path);
     for (i = 0; i < post->num_segments; i++)
     {
-        assert(post->segments[i]->complete != 0);
+        if (post->segments_status[i] == SEGMENT_ERROR)
+        {
+            printf("Segment status = ERROR skipping\n");
+            continue;
+        }
         
         // Create the filename
         asprintf(&filename, "%s/%s.segment.%03d", path,
@@ -212,6 +223,23 @@ int file_chunk_exists(segment_t *segment, nzb_file *file)
     int ret;
 
     filename = file_get_chunk_filename(segment, file);
+
+    ret = stat(filename, &buf);
+    free(filename);
+    
+    if(ret == 0)
+        return 1;
+
+    return 0;
+}
+
+int file_complete_exists(post_t *post, nzb_file *file)
+{
+    char *filename;
+    struct stat buf;
+    int ret;
+
+    filename = file_get_complete_filename(post, file);
 
     ret = stat(filename, &buf);
     free(filename);
