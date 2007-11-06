@@ -24,17 +24,45 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FILE_H
-#define _FILE_H
+#ifndef _SEGMENT_H
+#define _SEGMENT_H
 
-#include "nzb_fetch.h"
+#include <stdlib.h>
 
-char *file_get_path(char *path);
-int file_write_chunk(segment_t *segment, nzb_file *file);
-char * file_get_chunk_filename(segment_t *segment, nzb_file *file);
-int file_combine(post_t * post, nzb_file *file);
-int file_write_raw(segment_t *segment, nzb_file *file);
-int file_complete_exists(post_t *post, nzb_file *file);
-int file_chunk_exists(segment_t *segment, nzb_file *file);
+/*!
+ * A segment represents one article on the NTTP server.
+ *
+ * TODO: decoded_size and bytes should be of type size_t;
+ */
+
+#include "types.h"
+
+typedef struct segment_s
+{
+    int already_exists;     //!< Flag TODO BITMASK
+    
+    int number;             //!< Segment number as in the nzb
+    int index;              //!< Internal segment_id 
+    int yenc_part;          //!< Segment part as in the yEnc header
+    int nzb_bytes;          //!< Bytes according to the nzb file.    
+    char *messageid;        //!< The message id 
+    
+    int complete;           //!< Set to 1 is complete 0 otherwise
+
+    int bytes;              //!< Size of the raw data 
+    char *data;             //!< Raw data
+    size_t decoded_size;    //!< Size of the decoded data
+    char *decoded_data;     //!< Decoded data
+
+    struct post_s *post;    //!< Reference to post which segment belongs to
+} segment_t;
+
+segment_t * segment_create();
+void segment_free(segment_t *segment);
+
+inline void segment_status_set(segment_t *segment, int flag);
+inline int segment_status_get(segment_t *segment);
 
 #endif
+
+

@@ -33,6 +33,7 @@
 #include "nttp_connection.h"
 #include "types.h"
 #include "queue.h"
+#include "file.h"
 #include "parse_nzb.h"
 #include "nzb_fetch.h"
 #include "process.h"

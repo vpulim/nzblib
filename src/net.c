@@ -35,7 +35,7 @@
 #include <stdarg.h>
 
 #include "global.h"
-#include "types.h"
+#include "server.h"
 #include "net.h"
 
 

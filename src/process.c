@@ -31,11 +31,12 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "nzb_fetch.h"
-#include "yenc.h"
-#include "file.h"
 
 #include "process.h"
+#include "yenc.h"
+#include "segment.h"
+#include "file.h"
+#include "nzb_fetch.h"
 
 void *process_data_queue(void *arg)
 {
@@ -66,10 +67,13 @@ void *process_data_queue(void *arg)
             continue;
         }
         
+        
         ret = file_write_chunk(segment, fetcher->file);
+        
         free(segment->data);
         segment->data = NULL;
         segment->bytes = 0;
+        
         if (ret < 0)
             printf("Unable to store file\n");
         
@@ -100,10 +104,7 @@ int process_check_post_status(post_t *post)
     // Return -1 when we have not tried to download all segments
     for (i = 0; i < post->num_segments; i++)
         if (post->segments_status[i] == SEGMENT_NEW)
-        {
-            printf("Found missing %d\n", i);
             return -1;
-        }
     // Tried all posts    
     return 0;
 }

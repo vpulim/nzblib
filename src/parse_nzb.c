@@ -262,7 +262,7 @@ void parse_segment_element(archive_t *archive, const char **atts)
     archive->in_segment = 1;
 
     // Create segment block
-    segment = types_create_segment();
+    segment = segment_create();
     assert(segment->messageid == NULL);
     assert(post != NULL);
     

@@ -27,20 +27,7 @@
 #include <stdlib.h>
 
 #include "types.h"
-
-segment_t * types_create_segment()
-{
-    segment_t * segment;
-    segment = malloc(sizeof(segment_t));
-    segment->data = NULL;
-    segment->bytes = 0;
-    segment->nzb_bytes = 0;
-    segment->decoded_data = NULL;
-    segment->decoded_size = 0;
-    segment->messageid = NULL;
-    segment->complete = 0;
-    return segment;
-}
+#include "segment.h"
 
 
 post_t * types_create_post()
@@ -63,17 +50,6 @@ post_t * types_create_post()
     
 }
 
-
-inline void segment_status_set(segment_t *segment, int flag)
-{
-    segment->post->segments_status[segment->index] = flag;
-}
-
-inline int segment_status_get(segment_t *segment)
-{
-    return segment->post->segments_status[segment->index];
-}
-
     
 /*
  * Initialize a new fileinfo structure
@@ -91,19 +67,7 @@ fileinfo_t * types_create_fileinfo()
     return fileinfo;
 }
 
-/*
- * Free segment
- */
-void types_free_segment(segment_t *segment)
-{
-    if(segment->data != NULL)
-        free(segment->data);
 
-    if(segment->decoded_data != NULL)
-        free(segment->decoded_data);
-
-    free(segment);
-}
 
 
 void types_free_post(post_t *post)
@@ -117,7 +81,7 @@ void types_free_post(post_t *post)
         free(post->groups[i]);
 
     for (i = 0; i < post->num_segments; i++)
-        types_free_segment(post->segments[i]);
+        segment_free(post->segments[i]);
         
     free(post->subject);
     free(post);

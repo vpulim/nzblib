@@ -34,8 +34,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "nzb_fetch.h"
 #include "file.h"
+
+#include "nzb_fetch.h"
 #include "global.h"
 
 
@@ -149,7 +150,7 @@ char * file_get_complete_filename(post_t *post, nzb_file *file)
     if (path == NULL)
     {
         assert(0);
-        return -1;
+        return NULL;
     }
     asprintf(&filename, "%s/%s", path, post->fileinfo->filename);
     
@@ -214,7 +215,6 @@ int file_combine(post_t * post, nzb_file *file)
     fclose(fp_target);
     return 0;
 }
-
 
 int file_chunk_exists(segment_t *segment, nzb_file *file)
 {

@@ -24,17 +24,48 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FILE_H
-#define _FILE_H
 
-#include "nzb_fetch.h"
+#include "segment.h"
 
-char *file_get_path(char *path);
-int file_write_chunk(segment_t *segment, nzb_file *file);
-char * file_get_chunk_filename(segment_t *segment, nzb_file *file);
-int file_combine(post_t * post, nzb_file *file);
-int file_write_raw(segment_t *segment, nzb_file *file);
-int file_complete_exists(post_t *post, nzb_file *file);
-int file_chunk_exists(segment_t *segment, nzb_file *file);
+/*!
+ * Initialize a segment
+ */
+segment_t * segment_create()
+{
+    segment_t * segment;
+    segment = malloc(sizeof(segment_t));
+    segment->data = NULL;
+    segment->bytes = 0;
+    segment->nzb_bytes = 0;
+    segment->decoded_data = NULL;
+    segment->decoded_size = 0;
+    segment->messageid = NULL;
+    segment->complete = 0;
+    return segment;
+}
 
-#endif
+
+/*!
+ * Free segment
+ */
+void segment_free(segment_t *segment)
+{
+    if(segment->data != NULL)
+        free(segment->data);
+
+    if(segment->decoded_data != NULL)
+        free(segment->decoded_data);
+
+    free(segment);
+}
+
+
+inline void segment_status_set(segment_t *segment, int flag)
+{
+    segment->post->segments_status[segment->index] = flag;
+}
+
+inline int segment_status_get(segment_t *segment)
+{
+    return segment->post->segments_status[segment->index];
+}

@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "types.h"
+#include "server.h"
 #include "nzb_fetch.h"
 
 /*!
