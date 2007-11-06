@@ -188,10 +188,26 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
     
     
     queue_list->first = queue_item->next;
+    
+    if (queue_list->last == queue_item)
+        queue_list->last = NULL;
 
     queue_item->next = NULL;
     queue_item->prev = NULL;
 
+    
+    if (server == NULL)
+    {
+        printf("Processing %s.%d\n",  queue_item->segment->post->fileinfo->filename, queue_item->segment->index);
+        if (queue_list->first != NULL)
+            printf("Next %s.%d\n",  queue_list->first->segment->post->fileinfo->filename, queue_list->first->segment->index);
+        if(queue_item->segment->data == NULL)
+        {
+            printf("ERROR Processing %s.%d\n",  queue_item->segment->post->fileinfo->filename, queue_item->segment->index);
+            assert(0);
+        }
+    
+    }
     assert(queue_item != NULL);
     MTX_UNLOCK(&queue_list->mtx_queue);
     return queue_item;    
@@ -235,6 +251,8 @@ void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
 {
 
     MTX_LOCK(&queue_list->mtx_queue);
+    assert(queue_item->next == NULL);
+    assert(queue_item->prev == NULL);
     // Clean previous linked list vars
     queue_item->next = NULL;
     queue_item->prev = NULL;
