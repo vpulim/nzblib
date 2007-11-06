@@ -53,7 +53,11 @@ void *process_data_queue(void *arg)
     {
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, NULL);
+        
         segment = queue_item->segment;
+        
+        assert(segment->data != NULL);
+        
 
         //file_write_raw(segment, fetcher->file);
         ret = yenc_decode(segment);

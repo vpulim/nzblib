@@ -192,7 +192,7 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
 
         // Fixme. Realloc might fail, also note that if it fails the old data
         // should be freed too.
-        segment->data = realloc(segment->data, segment->bytes + data_length);
+        segment->data = realloc(segment->data, segment->bytes + data_length + 1);
 
         memcpy(segment->data + segment->bytes, data, data_length);
         
@@ -304,7 +304,7 @@ int nttp_process_queue(struct connection_thread *ct)
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
-        printf("[Thread %d] Downloading segment %d of %s\n", ct->thread_num, queue_item->segment->number, queue_item->segment->post->fileinfo->filename);
+        printf("[Thread %d] Downloading segment %s.%d\n", ct->thread_num, queue_item->segment->post->fileinfo->filename, queue_item->segment->index);
         
         // Select group if the correct one isn't selected
         // We should iterate the groups if the first one isn't avail
@@ -333,7 +333,11 @@ int nttp_process_queue(struct connection_thread *ct)
             continue;
         }
         
+        
+        assert(queue_item->segment->data != NULL);
+        assert(queue != ct->data_queue);
         queue_list_append(ct->data_queue, queue_item);
+        //sleep(1);
     }
     
     return 0;
@@ -359,13 +363,11 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     printf("Error while retrieving %s from %s\n",
            queue_item->segment->messageid, server->address);
     
-    
     // Find first server:
     while (server_head->prev != NULL)
         server_head = server_head->prev;
 
     // How many servers do we have with the same priority
-    while (server != NULL)
     for(server = server_head; server; server = server->next)
     {
         if (server->priority == current_server->priority)
@@ -374,20 +376,16 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     }
     
     queue_item_set_failed(queue_item, server);
-    // Ok we have tried all servers from the same priority
-    if (queue_item->num_failed_servers == same_prio_servers)
-    {
-        // Check if we have more servers with a higher priority.
-        if(same_prio_servers == total_servers)
-            return -1;
-    }
     
+    // If all servers failed, return   
+    if (queue_item->num_failed_servers == total_servers)
+        return -1;
+
 
     if (queue_item->num_failed_servers < same_prio_servers)
     {
         // There are more servers with the same priority push it on
         // the queue again.
-        
         printf("Prepending item on same queue for other server\n");
         queue_list_prepend(queue, queue_item);
         return 1;
@@ -395,7 +393,8 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     else
     {
         // All servers with the same priority have tried and failed
-        // Push the queue_item on a queue of a server with a higher priority
+        // Search for a server with a higher priority and push it on that
+        // queue.
         for(server = server_head; server; server = server->next)
         {
             if (server->priority > current_server->priority)

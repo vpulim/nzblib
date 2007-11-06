@@ -123,6 +123,7 @@ queue_list_t * queue_list_create()
     
     queue_list->first = NULL;
     queue_list->last = NULL;
+    queue_list->id = NULL;
     
     return queue_list;
 }
@@ -149,6 +150,8 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
     
     queue_item = queue_list->first;
     
+    // There is new data however another thread might be quicker, thus we
+    // loop here to make sure that we really have an item from the queue 
     while (queue_item == NULL)
     {
         MTX_UNLOCK(&queue_list->mtx_queue);
@@ -156,9 +159,9 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
         // Sleep until we are woken that we have new data
         queue_list_sleep(queue_list);
         
-        // There is new data however another thread might be quicker, thus we
-        // loop here to make sure that we really have an item from the queue
+
         MTX_LOCK(&queue_list->mtx_queue);
+        
         queue_item = queue_list->first;
     }
     
@@ -173,16 +176,22 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
                 break;
         }
         while((queue_item = queue_item->next));
+    
+
+        //Break out the queue item from the linked list
+        if(queue_item->prev != NULL)
+            queue_item->prev->next = queue_item->next;
+        
+        if(queue_item->next != NULL)
+            queue_item->next->prev = queue_item->prev;
     }
     
-    // Break out the queue item from the linked list
-    if(queue_item->prev != NULL)
-        queue_item->prev->next = queue_item->next;
     
-    if(queue_item->next != NULL)
-        queue_item->next->prev = queue_item->prev;
-        
     queue_list->first = queue_item->next;
+
+    queue_item->next = NULL;
+    queue_item->prev = NULL;
+
     assert(queue_item != NULL);
     MTX_UNLOCK(&queue_list->mtx_queue);
     return queue_item;    
@@ -224,11 +233,12 @@ queue_item_t * queue_list_pop(queue_list_t  *queue_list, server_t *server)
  */
 void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
 {
+
+    MTX_LOCK(&queue_list->mtx_queue);
     // Clean previous linked list vars
     queue_item->next = NULL;
     queue_item->prev = NULL;
     
-    MTX_LOCK(&queue_list->mtx_queue);
     if (queue_list->first == NULL)
         queue_list->first = queue_item;
     
@@ -240,12 +250,12 @@ void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
     queue_list->last = queue_item;
     
     MTX_UNLOCK(&queue_list->mtx_queue);
-    
 
     MTX_LOCK(&queue_list->mtx_cond);
     pthread_cond_signal(&queue_list->cond_item);
     MTX_UNLOCK(&queue_list->mtx_cond);
-        
+    
+    
 }
 
 /*!

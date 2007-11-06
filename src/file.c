@@ -174,6 +174,10 @@ int file_combine(post_t * post, nzb_file *file)
     free(filename);
     //free(path);
     
+    /* TODO:
+        Get array of segment_index sorted on part number
+        iterate that array
+    */
     path = file_get_path(file->temporary_path);
     for (i = 0; i < post->num_segments; i++)
     {

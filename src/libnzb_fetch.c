@@ -50,7 +50,12 @@ nzb_fetch *nzb_fetch_init()
     fetcher = malloc(sizeof(nzb_fetch));
     
     fetcher->queue = queue_list_create();
+    fetcher->queue->id = strdup("main queue");
+    
     fetcher->data_queue = queue_list_create();
+    
+    
+    fetcher->data_queue->id = strdup("data queue");
     
     fetcher->priority_queues = malloc(sizeof(queue_list_t *));
     fetcher->priority_queues[0] = fetcher->queue;
@@ -111,6 +116,9 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
         current_queues = sizeof(fetcher->priority_queues) /
                             sizeof(queue_list_t *);
         
+        printf("Required queues: %d Current queues %d\n", required_queues,
+               current_queues);
+        
         if (required_queues > current_queues)
         {
             printf("Creating extra priority queues: %d\n", required_queues);
@@ -120,7 +128,8 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
             
             printf("%d\n", new_server->priority);
             fetcher->priority_queues[new_server->priority] = queue_list_create();
-        }
+            fetcher->priority_queues[new_server->priority]->id = strdup("priority queue");
+        }   
     }
     return 0;
 }
@@ -242,7 +251,7 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
             queue_list_append(fetcher->queue, queue_item);
         }
     }
-    
+    printf("Done 2\n");
     // Then add the rest
     // TODO
     
