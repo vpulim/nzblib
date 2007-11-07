@@ -30,7 +30,7 @@
 #include "segment.h"
 
 
-post_t * types_create_post()
+post_t * post_create()
 {
     post_t * post;
     
@@ -43,6 +43,7 @@ post_t * types_create_post()
     post->groups = NULL;
     
     post->filename = NULL;
+    post->filesize = 0;
     post->segments_status = NULL;
     post->next = NULL;
     post->prev = NULL;
@@ -50,8 +51,34 @@ post_t * types_create_post()
     
 }
 
-    
-void types_free_post(post_t *post)
+
+/*!
+ * Sort the segments in post->segments on the segment->number value. 
+ */
+void post_segments_sort(post_t * post, int beg, int end)
+{
+    int piv, l, r;
+
+    if (end > beg + 1)
+    {
+        piv = post->segments[beg]->number;
+        l = beg + 1;
+        r = end;
+        
+        while (l < r)
+        {
+            if (post->segments[l]->number <= piv)
+                l++;
+            else
+                swap((int *)&post->segments[l], (int *)&post->segments[--r]);
+        }
+        swap((int *)&post->segments[--l], (int *)&post->segments[beg]);
+        post_segments_sort(post, beg, l);
+        post_segments_sort(post, r, end);
+    }
+}
+
+void post_free(post_t *post)
 {
     int i;
     
@@ -68,7 +95,7 @@ void types_free_post(post_t *post)
     free(post);
 }
 
-void types_post_insert(post_t *target, post_t *post)
+void post_insert(post_t *target, post_t *post)
 {
     if(target == NULL)
     {
@@ -86,7 +113,7 @@ void types_post_insert(post_t *target, post_t *post)
     
 }
 
-void types_post_remove(post_t *target, post_t *post)
+void post_remove(post_t *target, post_t *post)
 {
     if(post->prev != NULL)
         post->prev->next = post->next;

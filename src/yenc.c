@@ -149,6 +149,7 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
         p = index(c, ' ');
         *p = '\0';
         segment->decoded_size = strtol(c, (char **)NULL, 10);
+        segment->post->filesize = segment->decoded_size;
         *p = ' ';
     }
 
@@ -262,8 +263,8 @@ int main(int argc, char **argv)
         bytes = fread(data, sizeof(char), 2048576, fp);
         printf("Read %d bytes\n", bytes);
         fclose(fp);
-        post = types_create_post();
-        segment = types_create_segment();
+        post = post_create();
+        segment = segment_create();
         segment->data = data;
         segment->bytes = bytes;
         segment->post = post;

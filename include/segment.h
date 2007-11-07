@@ -60,9 +60,9 @@ typedef struct segment_s
 segment_t * segment_create();
 void segment_free(segment_t *segment);
 
-inline void segment_status_set(segment_t *segment, int flag);
-inline int segment_status_get(segment_t *segment);
 
+void segment_status_set(segment_t *segment, int flag);
+int segment_status_get(segment_t *segment);
 
 #endif
 

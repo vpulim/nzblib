@@ -127,7 +127,10 @@ void element_end(void *data, const char *name)
 {
     archive_t * archive = data;
     if(strcmp(name, "file") == 0)
+    {
         archive->in_file = 0;
+        post_segments_sort(archive->last, 0, archive->last->num_segments);
+    }
 
     else if(strcmp(name, "segment") == 0)
         archive->in_segment = 0;
@@ -136,6 +139,9 @@ void element_end(void *data, const char *name)
         archive->in_group = 0;
         
 }
+
+
+
 
 
 /*!
@@ -208,7 +214,7 @@ void parse_file_element(archive_t *archive, const char **atts)
     
     archive->in_file = 1;
 
-    post = types_create_post();
+    post = post_create();
 
     // Parse attributes
     while(atts[i])

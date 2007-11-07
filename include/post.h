@@ -49,8 +49,10 @@ typedef struct post_s
 {
     int id;
     char *subject;
+    
     char *filename;
-
+    size_t filesize;
+    
     int num_groups;         // Number of groups
     char **groups;          // Array with groups
 
@@ -77,16 +79,16 @@ struct connection_thread
     //postlist_t *postlist;
 };
 
-
+void post_segments_sort(post_t * post, int beg, int end);
 
 
 //void types_postlist_init(postlist_t *postlist);
 
-void types_free_post(post_t *post);
-post_t * types_create_post();
+void post_free(post_t *post);
+post_t * post_create();
 
 
-void types_post_remove(post_t *target, post_t *post);
-void types_post_insert(post_t *target, post_t *post);
+void post_remove(post_t *target, post_t *post);
+void post_insert(post_t *target, post_t *post);
 
 #endif

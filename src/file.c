@@ -271,7 +271,7 @@ int main(int argc, char **argv)
     bytes = fread(data, sizeof(char), 2048576, fp);
     fclose(fp);
 
-    segment = types_create_segment();
+    segment = segment_create();
     segment->data = data;
     segment->bytes = bytes;
     segment->number = 1;
