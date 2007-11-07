@@ -215,7 +215,7 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
     {
         if (file_complete_exists(post_item, file))
         {
-            printf("Found complete file: %s\n", post_item->fileinfo->filename);
+            printf("Found complete file: %s\n", post_item->filename);
             if (post_item->prev != NULL)
                 post_item->prev->next = post_item->next;
                 

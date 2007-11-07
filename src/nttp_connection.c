@@ -290,7 +290,7 @@ int nttp_process_queue(struct connection_thread *ct)
 {
     queue_list_t *queue = ct->queues[ct->server->priority];
     queue_item_t *queue_item;
-    char *current_group;
+    char *current_group = NULL;
     int ret;
     
     while(1)
@@ -304,7 +304,7 @@ int nttp_process_queue(struct connection_thread *ct)
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
-        printf("[Thread %d] Downloading segment %s.%d\n", ct->thread_num, queue_item->segment->post->fileinfo->filename, queue_item->segment->index);
+        printf("[Thread %d] Downloading segment %s.%d\n", ct->thread_num, queue_item->segment->post->filename, queue_item->segment->index);
         
         // Select group if the correct one isn't selected
         // We should iterate the groups if the first one isn't avail

@@ -49,7 +49,7 @@ int yenc_decode(segment_t *segment)
 {
     char *p, *s = segment->data;
     unsigned char ch;
-    uint32_t yenc_checksum;
+    uint32_t yenc_checksum = 0;
     uint32_t data_checksum;
     int i = 0;
     int pos = 0;
@@ -63,7 +63,7 @@ int yenc_decode(segment_t *segment)
     }
 
     
-    data_checksum = crc32_init(data_checksum);
+    data_checksum = crc32_init();
     
     while((p = strsep(&s, "\r\n")))
     {
@@ -112,7 +112,7 @@ int yenc_decode(segment_t *segment)
     segment->decoded_data[pos] = '\0';
 
     data_checksum = crc32_finish(data_checksum);
-    if (yenc_checksum != data_checksum)
+    if (yenc_checksum != data_checksum || yenc_checksum == 0)
         return YENC_CRC_ERROR;
     
     return YENC_OK;
@@ -123,15 +123,14 @@ int yenc_decode(segment_t *segment)
  * structure.
  *  segment->number is the target line length
  *  segment->decoded_size is the size of the file (when decoded)
- *  segment->fileinfo->filename is the filename
+ *  segment->filename is the filename
  *
- *  TODO: Why segment->fileinfo->filename and not segment->fileinfo->filesize ?
+ *  TODO: Why segment->filename and not segment->filesize
  */
 void yenc_parse_ybegin(char *line, segment_t *segment)
 {
     char *p = line;
     char *c;
-    fileinfo_t * fileinfo;
     
     
     p += 8;
@@ -156,15 +155,15 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
     if((c = strstr(line, "name=")))
     {
         c += 5;
-        fileinfo = segment->post->fileinfo;
         
-        if(fileinfo->filename == NULL || strcmp(c, fileinfo->filename) != 0)
+        if(segment->post->filename == NULL ||
+           strcmp(c, segment->post->filename) != 0)
         {
             // Force the use of the filename in the yenc message 
-            if(fileinfo->filename != NULL)
-                free(fileinfo->filename);
+            if(segment->post->filename != NULL)
+                free(segment->post->filename);
                 
-            fileinfo->filename = strdup(c);    
+            segment->post->filename = strdup(c);    
         }
     }
             
@@ -264,7 +263,6 @@ int main(int argc, char **argv)
         printf("Read %d bytes\n", bytes);
         fclose(fp);
         post = types_create_post();
-        post->fileinfo = types_create_fileinfo();
         segment = types_create_segment();
         segment->data = data;
         segment->bytes = bytes;

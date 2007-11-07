@@ -89,7 +89,7 @@ void *process_data_queue(void *arg)
         {
             file_combine(segment->post, fetcher->file);
             printf("Completed download of %s\n",
-                   segment->post->fileinfo->filename);
+                   segment->post->filename);
             //types_free_post(segment->post);
         }
         free(segment->decoded_data);

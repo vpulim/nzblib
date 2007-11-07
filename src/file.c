@@ -66,7 +66,6 @@ char *file_get_path(char *path)
 int file_write_chunk(segment_t *segment, nzb_file *file)
 {
     char *filename;
-    int ret;
     FILE *fp;
     
     filename = file_get_chunk_filename(segment, file);
@@ -86,8 +85,7 @@ int file_write_chunk(segment_t *segment, nzb_file *file)
     
     free(filename);
     
-    if (ret < 0)
-        return -1;
+
     
     return 0;
 }
@@ -95,12 +93,11 @@ int file_write_chunk(segment_t *segment, nzb_file *file)
 int file_write_raw(segment_t *segment, nzb_file *file)
 {
     char *filename;
-    int ret;
     FILE *fp;
 
 
     asprintf(&filename, "%s.segment.%03d", 
-             segment->post->fileinfo->filename, segment->number);
+             segment->post->filename, segment->number);
 
     fp = fopen(filename, "w");
     if(fp != NULL)
@@ -117,8 +114,6 @@ int file_write_raw(segment_t *segment, nzb_file *file)
     
     free(filename);
     
-    if (ret < 0)
-        return -1;
     
     return 0;
 }
@@ -133,10 +128,10 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     if (path == NULL)
         return NULL;
     
-    assert(segment->post->fileinfo->filename != NULL);
+    assert(segment->post->filename != NULL);
     
     asprintf(&filename, "%s/%s.segment.%03d", path,
-             segment->post->fileinfo->filename, segment->number);
+             segment->post->filename, segment->number);
     
     //free(path);
     return filename;
@@ -152,7 +147,7 @@ char * file_get_complete_filename(post_t *post, nzb_file *file)
         assert(0);
         return NULL;
     }
-    asprintf(&filename, "%s/%s", path, post->fileinfo->filename);
+    asprintf(&filename, "%s/%s", path, post->filename);
     
     return filename;
 }
@@ -190,7 +185,7 @@ int file_combine(post_t * post, nzb_file *file)
         // Create the filename
         // TODO change ->number in yenc_part
         asprintf(&filename, "%s/%s.segment.%03d", path,
-                post->fileinfo->filename, post->segments[i]->number);
+                post->filename, post->segments[i]->number);
         
         fp_chunk = fopen(filename, "r");
 

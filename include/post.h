@@ -41,20 +41,6 @@
 #define SEGMENT_COMPLETE        8
 
 
-/*!
- * Fileinfo type contains the filename and other unused variables
- */
-typedef struct fileinfo_s
-{
-    char *filename;         //!< Filename
-    int num_segments;
-    
-    unsigned int flags;
-    
-} fileinfo_t;
-
-
-
 
 /*!
  * A post can exists out of multiple segments and generaly represents one file.
@@ -63,7 +49,7 @@ typedef struct post_s
 {
     int id;
     char *subject;
-    fileinfo_t *fileinfo;
+    char *filename;
 
     int num_groups;         // Number of groups
     char **groups;          // Array with groups
@@ -99,8 +85,6 @@ struct connection_thread
 void types_free_post(post_t *post);
 post_t * types_create_post();
 
-fileinfo_t * types_create_fileinfo();
-void types_free_fileinfo(fileinfo_t *fileinfo);
 
 void types_post_remove(post_t *target, post_t *post);
 void types_post_insert(post_t *target, post_t *post);

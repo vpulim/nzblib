@@ -42,7 +42,7 @@ post_t * types_create_post()
     post->num_groups    = 0;
     post->groups = NULL;
     
-    post->fileinfo = NULL;
+    post->filename = NULL;
     post->segments_status = NULL;
     post->next = NULL;
     post->prev = NULL;
@@ -51,25 +51,6 @@ post_t * types_create_post()
 }
 
     
-/*
- * Initialize a new fileinfo structure
- */
-fileinfo_t * types_create_fileinfo()
-{
-    fileinfo_t * fileinfo;
-    
-    fileinfo = malloc(sizeof(fileinfo_t));
-    
-    fileinfo->filename = NULL;
-    fileinfo->num_segments = 0;
-    fileinfo->flags = 0;
-    
-    return fileinfo;
-}
-
-
-
-
 void types_free_post(post_t *post)
 {
     int i;
@@ -85,17 +66,6 @@ void types_free_post(post_t *post)
         
     free(post->subject);
     free(post);
-}
-
-void types_free_fileinfo(fileinfo_t *fileinfo)
-{
-    if(fileinfo == NULL)
-        return;
-    
-    if(fileinfo->filename != NULL)
-        free(fileinfo->filename);
-    
-    free(fileinfo);
 }
 
 void types_post_insert(post_t *target, post_t *post)

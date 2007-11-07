@@ -209,7 +209,6 @@ void parse_file_element(archive_t *archive, const char **atts)
     archive->in_file = 1;
 
     post = types_create_post();
-    post->fileinfo = types_create_fileinfo();
 
     // Parse attributes
     while(atts[i])
@@ -220,7 +219,7 @@ void parse_file_element(archive_t *archive, const char **atts)
         if(strcmp(key, "subject") == 0)
         {
             post->subject = strdup(value);
-            post->fileinfo->filename = find_filename(value);
+            post->filename = find_filename(value);
         }
     }
 
@@ -375,7 +374,7 @@ int main(int argc, char **argv)
     for(file; file; file = file->next)
     {
         printf("Subject: %s\n", file->subject);
-        printf("Filename: %s\n", file->fileinfo->filename);
+        printf("Filename: %s\n", file->filename);
         printf("Number of segments: %d\n", file->num_segments);
         for(i = 0; i < file->num_groups; i++)
         {
