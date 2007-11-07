@@ -199,62 +199,53 @@ nzb_file *nzb_fetch_parse(char *filename)
     return file;
 }
 
-int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file)
+
+int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files)
 {
-    post_t *post_item;
-    queue_item_t  *queue_item;
-    int i;
-    printf("Parsing %s\n", file->filename);
-    
-    printf("Adding post to queue\n");
-    
-    fetcher->file = file;
+    post_t *post;
+    int num_posts = 0;
+    int i = 0;
     
     // First add all the first segments of each post
-    for(post_item = file->posts; post_item != NULL; post_item = post_item->next)
+    for(post = file->posts; post != NULL; post = post->next)
+        num_posts++;
+    
+    *files = malloc(sizeof(nzb_file_info *) * num_posts);
+    
+    for(post = file->posts, i = 0; post != NULL; post = post->next, i++)
     {
-        if (file_complete_exists(post_item, file))
+        (*files)[i] = malloc(sizeof(nzb_file_info));
+        (*files)[i]->filename = strdup(post->filename);
+        (*files)[i]->post = post;
+        (*files)[i]->file = file;
+    }
+    
+
+        
+    return num_posts;
+}
+
+int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
+{
+    post_t *post = filelist->post;
+    queue_item_t  *queue_item;
+    int i;
+    
+    fetcher->file = filelist->file;
+    
+    printf("Putting file %s on the queue\n", filelist->filename);
+    for (i = 0; i < post->num_segments; i++)
+    {
+        if (file_chunk_exists(post->segments[i], filelist->file))
         {
-            printf("Found complete file: %s\n", post_item->filename);
-            if (post_item->prev != NULL)
-                post_item->prev->next = post_item->next;
-                
-            continue;   
-        }
-        if (file_chunk_exists(post_item->segments[0], file))
-        {
-            post_item->segments[0]->complete = 1;
-            segment_status_set(post_item->segments[0], SEGMENT_COMPLETE);
+            segment_status_set(post->segments[i], SEGMENT_COMPLETE);
+            printf("Segment is complete\n");
             continue;
         }
-        
-        queue_item = queue_item_create(post_item->segments[0]);
+        queue_item = queue_item_create(post->segments[i]);
         queue_list_append(fetcher->queue, queue_item);
     }
-    printf("Done\n");
-
-    // Then add all the other segments of each post
-    for(post_item = file->posts; post_item != NULL; post_item = post_item->next)
-    {
-        if (post_item->num_segments == 1)
-            continue;
-            
-        for (i = 1; i < post_item->num_segments; i++)
-        {
-            if (file_chunk_exists(post_item->segments[i], file))
-            {
-                post_item->segments[i]->complete = 1;
-                segment_status_set(post_item->segments[i], SEGMENT_COMPLETE);
-                continue;
-            }
-            queue_item = queue_item_create(post_item->segments[i]);
-            queue_list_append(fetcher->queue, queue_item);
-        }
-    }
-    printf("Done 2\n");
-    // Then add the rest
-    // TODO
-    
+ 
     return 0;
 }
 

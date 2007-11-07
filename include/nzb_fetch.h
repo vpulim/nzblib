@@ -56,6 +56,16 @@ typedef struct nzb_fetch_s
 } nzb_fetch;
 
 
+typedef struct nzb_file_info_s
+{
+    char *filename;
+    
+    nzb_file *file;
+    struct post_s *post;
+} nzb_file_info;
+
+
+
 
 nzb_fetch * nzb_fetch_init();
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
@@ -66,5 +76,5 @@ nzb_file *nzb_fetch_parse(char *filename);
 int nzb_fetch_connect(nzb_fetch *fetcher);
 int nzb_fetch_storage_path(nzb_file *file, char *path);
 int nzb_fetch_temporary_path(nzb_file *file, char *path);
-int nzb_fetch_download(nzb_fetch *fetcher, nzb_file *file);
+int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *file_info);
 #endif
