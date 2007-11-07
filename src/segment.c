@@ -60,12 +60,12 @@ void segment_free(segment_t *segment)
 }
 
 
-inline void segment_status_set(segment_t *segment, int flag)
+void segment_status_set(segment_t *segment, int flag)
 {
     segment->post->segments_status[segment->index] = flag;
 }
 
-inline int segment_status_get(segment_t *segment)
+int segment_status_get(segment_t *segment)
 {
     return segment->post->segments_status[segment->index];
 }
