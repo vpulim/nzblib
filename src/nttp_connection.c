@@ -46,9 +46,13 @@ int nttp_connect(struct connection_thread *ct)
 {
     char *data;
     int status_code;
-    
+    int bytes;
+
     ct->sock = net_connect(&ct->server->server_addr);
-    data = net_recv(ct->sock);
+    bytes = net_recv(ct->sock, &data);
+    if (bytes < 0)
+        return -1;
+    
     status_code = nttp_get_status_code(data);
     free(data);
 
@@ -68,6 +72,7 @@ int nttp_authenticate(int sock, char *username, char *password)
 {
     char *data;
     int status_code;
+    int bytes;
     
     if (username == NULL || password == NULL)
         return 0;
@@ -75,7 +80,10 @@ int nttp_authenticate(int sock, char *username, char *password)
     // Send username
     net_send(sock, "AUTHINFO USER %s\n", username);
     
-    data = net_recv(sock);
+    bytes = net_recv(sock, &data);
+    if (data == NULL)
+        return -1;
+    
     status_code = nttp_get_status_code(data);
     free(data);
     
@@ -89,7 +97,10 @@ int nttp_authenticate(int sock, char *username, char *password)
     // Send password
     net_send(sock, "AUTHINFO PASS %s\n", password);
 
-    data = net_recv(sock);
+    bytes = net_recv(sock, &data);
+    if (data == NULL)
+        return -1;
+    
     status_code = nttp_get_status_code(data);
     free(data);
     
@@ -143,7 +154,7 @@ int nttp_select_group(int sock, char *group)
     // Send password
     net_send(sock, "GROUP %s\n", group);
 
-    data = net_recv(sock);
+    net_recv(sock, &data);
     
     if (data == NULL)
         return -1;
@@ -168,12 +179,12 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
 {
     char *data;
     int status_code;
-    int data_length = 0;
+    int bytes = 0;
     net_send(sock, "BODY <%s>\n", segment->messageid);
     
     assert(segment->bytes == 0);
     
-    data = net_recv(sock);
+    bytes = net_recv(sock, &data);
     if (data == NULL)
         return -1;
     
@@ -188,16 +199,14 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
     
     do
     {
-        data_length = strlen(data);
-
         // Fixme. Realloc might fail
         segment->data = reallocf(segment->data,
-                                 segment->bytes + data_length + 1);
+                                 segment->bytes + bytes + 1);
 
-        memcpy(segment->data + segment->bytes, data, data_length);
+        memcpy(segment->data + segment->bytes, data, bytes);
         
         free(data);
-        segment->bytes += data_length;
+        segment->bytes += bytes;
         
         // Check if we have recevied all bytes
         if (segment->data[segment->bytes - 1] == '\n' &&
@@ -208,7 +217,7 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
             break;
         }
         
-        data = net_recv(sock);
+        bytes = net_recv(sock, &data);
         
     } while (1);
 

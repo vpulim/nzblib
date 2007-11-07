@@ -31,7 +31,7 @@
 
 int net_prepare_connection(server_t *server);
 int net_connect(struct sockaddr_in * addr);
-char *net_recv(int sock);
+int net_recv(int sock, char **data);
 int net_send(int sock, char *format, ...);
 void net_disconnect(int sock);
 

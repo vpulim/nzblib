@@ -81,32 +81,27 @@ int net_connect(struct sockaddr_in * addr)
 }
 
 /*
- * Receive data from the socket give as argument. This functions mallocs
- * BUFFER_SIZE stores the information in it and then null terminates the data.
- * The data is then returned as a pointer.
- *
- * TODO: This gives some problems when we want to know the size of the data.
- * Most of the times we don't and this makes it easy, but for example in
- * nttp_retrieve_segment we need to know the length of the bytes. Thus
- * requiring an extra strlen() which has an performance impact.
- *
- * This should be done better? or perhaps it isn't worth it.
+ * Receive and allocate data in second argument from the sock as first
+ * argument. This functions mallocs BUFFER_SIZE stores the information in
+ * the data pointer and returns the number of bytes.
  */
-char * net_recv(int sock)
+int net_recv(int sock, char **data)
 {
-    char *data = malloc(sizeof(char) * BUFFER_SIZE);
     int bytes;
+
+    *data = malloc(sizeof(char) * BUFFER_SIZE);
     
-    bytes = recv(sock, data, BUFFER_SIZE, 0);
+    bytes = recv(sock, *data, BUFFER_SIZE, 0);
     
     if (bytes == -1)
     {
         perror("Unable to receive");
         free(data);
-        return NULL;
+        data = NULL;
+        return -1;
     }
-    data[bytes] = '\0';
-    return data;
+    (*data)[bytes] = '\0';
+    return bytes;
 }
 
 /*
