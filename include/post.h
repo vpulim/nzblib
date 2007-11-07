@@ -24,19 +24,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TYPES_H
-#define _TYPES_H
+#ifndef _POST_H
+#define _POST_H
 
 #include <pthread.h>
-
-
-
-
 
 #include "server.h"
 #include "segment.h"
 #include "queue.h"
-
 
 #define FILE_COMPLETE   0x01
 
@@ -59,6 +54,8 @@ typedef struct fileinfo_s
 } fileinfo_t;
 
 
+
+
 /*!
  * A post can exists out of multiple segments and generaly represents one file.
  */
@@ -71,9 +68,10 @@ typedef struct post_s
     int num_groups;         // Number of groups
     char **groups;          // Array with groups
 
-    int num_segments;       // Number of segments
-    struct segment_s **segments;   // Array with segments
-    int *segments_status;    //!< Flags for the segment status
+    int num_segments;               //!< Number of segments
+    struct segment_s **segments;    //!< Array with segments
+    int *segments_status;           //!< Flags for the segment status
+    int *segments_;
     
     struct post_s *next, *prev;
 } post_t;

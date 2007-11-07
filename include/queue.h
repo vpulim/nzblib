@@ -57,6 +57,7 @@ typedef struct queue_list_s
 
     pthread_cond_t cond_item;       // Protected by mtx_cond
     
+    char *id;
     
     struct queue_item_s *last;
     struct queue_item_s *first;
