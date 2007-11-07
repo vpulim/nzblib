@@ -170,8 +170,8 @@ void element_data(void *data, const XML_Char *s, int len)
         if (segment->messageid != NULL)
             pos = strlen(segment->messageid);
 
-        segment->messageid = realloc(segment->messageid,
-                                     sizeof(char) * (pos + len + 1));
+        segment->messageid = reallocf(segment->messageid,
+                                      sizeof(char) * (pos + len + 1));
 
         memcpy(segment->messageid + pos, s, len);
         segment->messageid[pos + len] = '\0';
@@ -186,7 +186,7 @@ void element_data(void *data, const XML_Char *s, int len)
             pos = strlen(group);
             len += pos;
 
-        group = realloc(group, len);
+        group = reallocf(group, len);
 
         for(i = pos; i < len; i++)
             group[i] = *s++;
@@ -242,7 +242,7 @@ void parse_group_element(archive_t *archive, const char **atts)
     
     archive->in_group = 1;
     post->num_groups++;
-    post->groups = realloc(post->groups, sizeof(char *) * post->num_groups);
+    post->groups = reallocf(post->groups, sizeof(char *) * post->num_groups);
     post->groups[post->num_groups - 1] = NULL;
 }
 
@@ -278,12 +278,12 @@ void parse_segment_element(archive_t *archive, const char **atts)
             segment->number = strtol(value, (char **)NULL, 10);
     }
     
-    post->segments = realloc(post->segments,
-                             sizeof(segment_t *) * (post->num_segments + 1));
+    post->segments = reallocf(post->segments,
+                              sizeof(segment_t *) * (post->num_segments + 1));
     
     
-    post->segments_status = realloc((char *)post->segments_status,
-                                    sizeof(int) * (post->num_segments + 1));
+    post->segments_status = reallocf((char *)post->segments_status,
+                                     sizeof(int) * (post->num_segments + 1));
     
     segment->index = post->num_segments;
     

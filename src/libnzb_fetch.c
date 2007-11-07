@@ -122,9 +122,9 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
         if (required_queues > current_queues)
         {
             printf("Creating extra priority queues: %d\n", required_queues);
-            fetcher->priority_queues = realloc(fetcher->priority_queues,
-                                               sizeof(queue_list_t *) *
-                                               required_queues);
+            fetcher->priority_queues = reallocf(fetcher->priority_queues,
+                                                sizeof(queue_list_t *) *
+                                                required_queues);
             
             printf("%d\n", new_server->priority);
             fetcher->priority_queues[new_server->priority] = queue_list_create();

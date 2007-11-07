@@ -65,9 +65,9 @@ void queue_item_destroy(queue_item_t *queue_item)
  */
 void queue_item_set_failed(queue_item_t *queue_item, server_t *server)
 {
-    queue_item->failed_servers = realloc(queue_item->failed_servers,
-                                         sizeof(server_t *) *
-                                         queue_item->num_failed_servers + 1);
+    queue_item->failed_servers = reallocf(queue_item->failed_servers,
+                                          sizeof(server_t *) *
+                                          queue_item->num_failed_servers + 1);
     
     queue_item->failed_servers[queue_item->num_failed_servers] = server;
     

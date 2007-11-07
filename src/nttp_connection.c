@@ -190,9 +190,9 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
     {
         data_length = strlen(data);
 
-        // Fixme. Realloc might fail, also note that if it fails the old data
-        // should be freed too.
-        segment->data = realloc(segment->data, segment->bytes + data_length + 1);
+        // Fixme. Realloc might fail
+        segment->data = reallocf(segment->data,
+                                 segment->bytes + data_length + 1);
 
         memcpy(segment->data + segment->bytes, data, data_length);
         

@@ -205,8 +205,8 @@ void yenc_parse_ypart(char *line, segment_t *segment)
         
         ypart_size_end = (uint32_t)strtoull(value, (char **)NULL, 10);
         segment->decoded_size = ypart_size_end - (ypart_size_begin -1);
-        segment->decoded_data = realloc(segment->decoded_data,
-                                        segment->decoded_size + 1);
+        segment->decoded_data = reallocf(segment->decoded_data,
+                                         segment->decoded_size + 1);
     }
             
 }
