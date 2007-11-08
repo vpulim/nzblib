@@ -45,6 +45,11 @@ LIBS="${save_LIBS}"
 AC_SUBST(EXPAT_LIBS)
 
 
+##
+# Check for reallocf (FreeBSD api)
+AC_CHECK_FUNCS([reallocf])
+
+
 
 ##
 # Other header files
