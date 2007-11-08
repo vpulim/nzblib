@@ -29,6 +29,12 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "config.h"
+
+#if !HAVE_REALLOCF
+#   include "reallocf.h"
+#endif
+
 #include "net.h"
 #include "nttp_connection.h"
 #include "post.h"

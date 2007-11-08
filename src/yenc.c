@@ -30,6 +30,12 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "config.h"
+
+#if !HAVE_REALLOCF
+#   include "reallocf.h"
+#endif
+
 #include "crc32.h"
 #include "yenc.h"
 

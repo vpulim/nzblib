@@ -29,6 +29,12 @@
 
 #include <stdio.h>
 
+#include "config.h"
+
+#if !HAVE_REALLOCF
+#   include "reallocf.h"
+#endif
+
 #include "global.h"
 #include "post.h"
 #include "queue.h"

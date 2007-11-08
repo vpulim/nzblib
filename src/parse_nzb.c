@@ -29,6 +29,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include "config.h"
+
+#if !HAVE_REALLOCF
+#   include "reallocf.h"
+#endif
+
 #include "post.h"
 #include "parse_nzb.h"
 
