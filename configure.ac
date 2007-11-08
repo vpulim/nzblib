@@ -15,6 +15,7 @@ AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
+CFLAGS="${CFLAGS} -std=c99 -Wall -Winline"
 
 ##
 # Check for expat
@@ -30,11 +31,11 @@ AC_ARG_WITH([expat], [  --with-expat=path       specify that expat is installed 
 ])
 
 AC_CHECK_LIB(expat, XML_Parse,, [
-                    AC_MSG_ERROR([C compiler can't find <expat.h>])
+                    AC_MSG_ERROR([expat not found, please use --with-expat])
                 ])
 
 AC_CHECK_HEADER([expat.h],, [
-                    AC_MSG_ERROR([C compiler can't find <expat.h>])
+                    AC_MSG_ERROR([expat not found, please use --with-expat])
                 ])
                 
 EXPAT_LIBS="${LIBS}"
@@ -64,6 +65,7 @@ AC_CHECK_HEADER([sys/socket.h],, AC_MSG_ERROR(["Missing include file"]))
 
 AC_CONFIG_FILES([
     Makefile
+    include/Makefile
     src/Makefile
     example/Makefile
 ])
