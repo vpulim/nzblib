@@ -9,21 +9,22 @@ AC_LANG(C)
 AM_INIT_AUTOMAKE
 
 
+m4_include([aclocal/libtool.m4])
+
 AC_GNU_SOURCE
 AC_PROG_CC
+AC_PROG_LIBTOOL
 
 
 ##
 # Check for expat
-save_CFLAGS="${CFLAGS}"
-save_LDFLAGS="${LDFLAGS}"
 save_LIBS="${LIBS}"
 
 LIBS=""
 
 AC_ARG_WITH([expat], [  --with-expat=path       specify that expat is installed at path], [
     if test -n "$withval"; then
-        CPPFLAGS="$CPPFLAGS -I$withval/include"
+        CFLAGS="$CFLAGS -I$withval/include"
         LDFLAGS="$LDFLAGS -L$withval/lib"
     fi
 ])
@@ -38,8 +39,7 @@ AC_CHECK_HEADER([expat.h],, [
                 
 EXPAT_LIBS="${LIBS}"
 
-CLFAGS="${save_CFLAGS}"
-LDFLAGS="${save_LDFLAGS}"
+
 LIBS="${save_LIBS}"
 
 AC_SUBST(EXPAT_LIBS)
@@ -64,5 +64,7 @@ AC_CHECK_HEADER([sys/socket.h],, AC_MSG_ERROR(["Missing include file"]))
 
 AC_CONFIG_FILES([
     Makefile
+    src/Makefile
+    example/Makefile
 ])
 AC_OUTPUT
