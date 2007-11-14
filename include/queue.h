@@ -29,6 +29,7 @@
 
 #include "post.h"
 #include "server.h"
+#include "segment.h"
 
 
 #include <pthread.h>
@@ -64,8 +65,9 @@ typedef struct queue_list_s
     
 } queue_list_t;
 
+struct segment_s;
 
-queue_item_t * queue_item_create(void);
+queue_item_t * queue_item_create(struct segment_s *segment);
 void queue_item_set_failed(queue_item_t *queue_item, struct server_s *server);
 int queue_item_is_failed(queue_item_t *queue_item, struct server_s *server);
 queue_list_t * queue_list_create(void);
