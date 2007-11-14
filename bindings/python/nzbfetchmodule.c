@@ -1,3 +1,30 @@
+/*
+ * Copyright (c) 2004-2007 Michael van Tellingen.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *    
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
 #include <Python.h>
 #include <nzb_fetch.h>
 
@@ -10,10 +37,6 @@ typedef struct {
     PyObject_HEAD;
     nzb_fetch *fetcher;
 } nzbfetch_NZBFetchObject;
-
-
-
-
 
 
 /*
@@ -31,23 +54,19 @@ NZBFile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
-
-static void
-NZBFile_dealloc(nzbfetch_NZBFileObject* self)
+static void NZBFile_dealloc(nzbfetch_NZBFileObject* self)
 {
     self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject *
-NZBFile_init(nzbfetch_NZBFileObject* self)
+static PyObject * NZBFile_init(nzbfetch_NZBFileObject* self)
 {
-    
     return 0;
 }
 
 
-static int
-NZBFile_set_storage_path(nzbfetch_NZBFileObject* self, PyObject *args)
+static int NZBFile_set_storage_path(nzbfetch_NZBFileObject* self,
+                                    PyObject *args)
 {
     char *path;
     
@@ -55,12 +74,12 @@ NZBFile_set_storage_path(nzbfetch_NZBFileObject* self, PyObject *args)
         return 0;
     
     nzb_fetch_storage_path(self->file, path);
-    return Py_None;
+    return 1;
 }
 
 
-static int
-NZBFile_set_temporary_path(nzbfetch_NZBFileObject* self, PyObject *args)
+static int NZBFile_set_temporary_path(nzbfetch_NZBFileObject* self,
+                                      PyObject *args)
 {
     char *path;
     
@@ -68,12 +87,12 @@ NZBFile_set_temporary_path(nzbfetch_NZBFileObject* self, PyObject *args)
         return 0;
     
     nzb_fetch_temporary_path(self->file, path);
-    return Py_None;
+    return 1;
 }
 
 
-static PyObject *
-NZBFile_list_files(nzbfetch_NZBFileObject* self, PyObject *path)
+static PyObject * NZBFile_list_files(nzbfetch_NZBFileObject* self,
+                                     PyObject *path)
 {
     nzb_file_info **files;
     int num_files;
@@ -98,72 +117,64 @@ NZBFile_list_files(nzbfetch_NZBFileObject* self, PyObject *path)
 }
 
 
-PyObject *
-NZBFile_create(PyObject *args)
-{
-
-}
-
 static PyMethodDef NZBFile_methods[] = {
     {"set_storage_path", (PyCFunctionWithKeywords)NZBFile_set_storage_path,
-    METH_KEYWORDS,
+     METH_KEYWORDS,
      "Set the storage path"
     },
     {"set_temporary_path", (PyCFunctionWithKeywords)NZBFile_set_temporary_path,
-    METH_KEYWORDS,
+     METH_KEYWORDS,
      "Set the temporary path"
     },
     {"list_files", (PyCFunction)NZBFile_list_files,
-    METH_NOARGS,
+     METH_NOARGS,
      "Return a list with all files in the NZB file"
     },
     {NULL}  /* Sentinel */
 };
 
 
-
 PyTypeObject nzbfetch_NZBFileType = {
     PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nzbfetch.NZBFile",       /*tp_name*/
-    sizeof(nzbfetch_NZBFileObject), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NZBFile_dealloc,          /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "Noddy objects",           /* tp_doc */
-    0,                     /* tp_traverse */
-    0,                     /* tp_clear */
-    0,                     /* tp_richcompare */
-    0,                     /* tp_weaklistoffset */
-    0,                     /* tp_iter */
-    0,                      /* tp_iternext */
-    NZBFile_methods,          /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NZBFile_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NZBFile_new,                 /* tp_new */
+    0,                              /* ob_size */
+    "nzbfetch.NZBFile",             /* tp_name */
+    sizeof(nzbfetch_NZBFileObject), /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    (destructor)NZBFile_dealloc,    /* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_compare */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro*/
+    0,                              /* tp_setattro*/
+    0,                              /* tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,             /* tp_flags*/
+    "Noddy objects",                /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    NZBFile_methods,                /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    (initproc)NZBFile_init,         /* tp_init */
+    0,                              /* tp_alloc */
+    NZBFile_new,                    /* tp_new */
 };
-
 
 
 
@@ -173,8 +184,8 @@ PyTypeObject nzbfetch_NZBFileType = {
  *
  */
 
-static PyObject *
-NZBFetch_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject * NZBFetch_new(PyTypeObject *type, PyObject *args,
+                               PyObject *kwds)
 {
     nzbfetch_NZBFetchObject *self;
 
@@ -183,14 +194,12 @@ NZBFetch_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
-static void
-NZBFetch_dealloc(nzbfetch_NZBFetchObject* self)
+static void NZBFetch_dealloc(nzbfetch_NZBFetchObject* self)
 {
     self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject *
-NZBFetch_init(nzbfetch_NZBFetchObject* self)
+static PyObject * NZBFetch_init(nzbfetch_NZBFetchObject* self)
 {
     self->fetcher = nzb_fetch_init();
     
@@ -198,10 +207,11 @@ NZBFetch_init(nzbfetch_NZBFetchObject* self)
 }
 
 
-static PyObject *
-NZBFetch_addserver(nzbfetch_NZBFetchObject* self, PyObject *args, PyObject *kwds)
+static PyObject * NZBFetch_addserver(nzbfetch_NZBFetchObject* self,
+                                     PyObject *args, PyObject *kwds)
 {
-    PyObject *hostname, *port, *username, *password, *connections, *priority;
+    char *hostname, *username, *password;
+    int port, connections, priority;
     
     static char *kwlist[] = {"hostname", "port", "username", "password",
                              "connections", "priority", NULL};
@@ -211,7 +221,6 @@ NZBFetch_addserver(nzbfetch_NZBFetchObject* self, PyObject *args, PyObject *kwds
                                       &hostname, &port, &username, &password,
                                       &connections, &priority))
         return NULL;
-    
 
     nzb_fetch_add_server(self->fetcher, hostname, port,
                          username, password, connections, priority);
@@ -221,8 +230,7 @@ NZBFetch_addserver(nzbfetch_NZBFetchObject* self, PyObject *args, PyObject *kwds
 
 };
 
-static int
-NZBFetch_download(nzbfetch_NZBFetchObject* self, PyObject *args)
+static int NZBFetch_download(nzbfetch_NZBFetchObject* self, PyObject *args)
 {
     int id;
     PyObject *file;
@@ -233,10 +241,11 @@ NZBFetch_download(nzbfetch_NZBFetchObject* self, PyObject *args)
         return 0;
     
     
-    num_files = nzb_fetch_list_files(((nzbfetch_NZBFileObject *)file)->file, &files);
+    num_files = nzb_fetch_list_files(((nzbfetch_NZBFileObject *)file)->file,
+                                     &files);
     nzb_fetch_download(self->fetcher, files[id]);
     
-    return Py_None;
+    return (int)Py_None;
 }
 
 static PyObject *
@@ -263,47 +272,46 @@ static PyMethodDef NZBFetch_methods[] = {
 };
 
 
-
 PyTypeObject nzbfetch_NZBFetchType = {
     PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nzbfetch.NZBFetch",       /*tp_name*/
-    sizeof(nzbfetch_NZBFetchObject), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NZBFetch_dealloc,          /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "Noddy objects",           /* tp_doc */
-    0,                     /* tp_traverse */
-    0,                     /* tp_clear */
-    0,                     /* tp_richcompare */
-    0,                     /* tp_weaklistoffset */
-    0,                     /* tp_iter */
-    0,                      /* tp_iternext */
-    NZBFetch_methods,          /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NZBFetch_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NZBFetch_new,                 /* tp_new */
+    0,                              /* ob_size */
+    "nzbfetch.NZBFetch",            /* tp_name */
+    sizeof(nzbfetch_NZBFetchObject),/* tp_basicsize */
+    0,                              /* tp_itemsize */
+    (destructor)NZBFetch_dealloc,   /* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_compare */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,             /* tp_flags */
+    "Noddy objects",                /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    NZBFetch_methods,               /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    (initproc)NZBFetch_init,        /* tp_init */
+    0,                              /* tp_alloc */
+    NZBFetch_new,                   /* tp_new */
 };
 
 
@@ -314,11 +322,6 @@ PyTypeObject nzbfetch_NZBFetchType = {
  */
 
 /* nzbfetch methods */
-static PyObject * nzbfetch_version()
-{
-    return Py_BuildValue("s", "versie 1");
-}
-
 static PyObject * nzbfetch_parse(PyObject *self, PyObject *args)
 {
     PyTypeObject *type = &nzbfetch_NZBFileType;
@@ -336,9 +339,8 @@ static PyObject * nzbfetch_parse(PyObject *self, PyObject *args)
     
     obj->file = nzb_fetch_parse(fn);
 
-    return obj;
+    return (PyObject *)obj;
 }
-
 
 static PyMethodDef NZBFetchMethods[] = {
     //{"version",  nzbfetch_version, METH_VARARGS, "Execute a shell command."},
@@ -346,8 +348,7 @@ static PyMethodDef NZBFetchMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
-PyMODINIT_FUNC
-initnzbfetch(void)
+PyMODINIT_FUNC initnzbfetch(void)
 {
     PyObject* m;
 
