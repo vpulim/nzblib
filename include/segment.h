@@ -57,7 +57,7 @@ typedef struct segment_s
     struct post_s *post;    //!< Reference to post which segment belongs to
 } segment_t;
 
-segment_t * segment_create();
+segment_t * segment_create(void);
 void segment_free(segment_t *segment);
 
 

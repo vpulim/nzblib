@@ -67,7 +67,7 @@ typedef struct nzb_file_info_s
 
 
 
-nzb_fetch * nzb_fetch_init();
+nzb_fetch * nzb_fetch_init(void);
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          char *username, char *password, int threads,
                          int priority);
@@ -77,4 +77,6 @@ int nzb_fetch_connect(nzb_fetch *fetcher);
 int nzb_fetch_storage_path(nzb_file *file, char *path);
 int nzb_fetch_temporary_path(nzb_file *file, char *path);
 int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *file_info);
+int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files);
+
 #endif

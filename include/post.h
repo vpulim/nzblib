@@ -85,7 +85,7 @@ void post_segments_sort(post_t * post, int beg, int end);
 //void types_postlist_init(postlist_t *postlist);
 
 void post_free(post_t *post);
-post_t * post_create();
+post_t * post_create(void);
 
 
 void post_remove(post_t *target, post_t *post);
