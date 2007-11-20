@@ -206,6 +206,11 @@ nzb_file *nzb_fetch_parse(char *filename)
 }
 
 
+int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete)
+{
+    fetcher->callback_file_complete = file_complete;
+}
+
 int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files)
 {
     post_t *post;
@@ -224,6 +229,9 @@ int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files)
         (*files)[i]->filename = strdup(post->filename);
         (*files)[i]->post = post;
         (*files)[i]->file = file;
+        
+        
+        post->client_data = (*files)[i];
     }
     
 
@@ -255,5 +263,8 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
     return 0;
 }
 
-
+int nzb_fetch_file_complete(nzb_fetch *fetcher, post_t *post)
+{
+    (*fetcher->callback_file_complete)((nzb_file_info *)post->client_data);
+}
 
