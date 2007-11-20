@@ -29,16 +29,18 @@
 #include <string.h>
 #include <assert.h>
 
-#include "config.h"
-
 #if !HAVE_REALLOCF
-#   include "reallocf.h"
+#   include "compat/reallocf.h"
+#endif
+
+#ifdef WIN32
+#	include "compat/win32.h"
 #endif
 
 #include "post.h"
 #include "parse_nzb.h"
 
-
+#ifndef WIN32
 static inline int max(int a, int b) {
   return a > b ? a : b;
 }
@@ -46,6 +48,7 @@ static inline int max(int a, int b) {
 static inline int min(int a, int b) {
   return a < b ? a : b;
 }
+#endif
 
 /*!
  * Parse an nzb file and return a post_t structure or NULL when an error
@@ -88,7 +91,7 @@ post_t * parse_nzb(char *filename)
     {
         len = fread(buffer, 1, sizeof(buffer), fp);
         done = len < sizeof(buffer);
-        if (!XML_Parse(parser, buffer, len, done)) {
+        if (!XML_Parse(parser, buffer, (int)len, done)) {
             fprintf(stderr, "%s at line %d\n",
                     XML_ErrorString(XML_GetErrorCode(parser)),
                     (int)XML_GetCurrentLineNumber(parser));
@@ -180,7 +183,7 @@ void element_data(void *data, const XML_Char *s, int len)
         segment = archive->last_segment;
 
         if (segment->messageid != NULL)
-            pos = strlen(segment->messageid);
+            pos = (int)strlen(segment->messageid);
 
         segment->messageid = reallocf(segment->messageid,
                                       sizeof(char) * (pos + len + 1));
@@ -195,7 +198,7 @@ void element_data(void *data, const XML_Char *s, int len)
         group = file->groups[file->num_groups - 1];
         
         if(group != NULL)
-            pos = strlen(group);
+            pos = (int)strlen(group);
             len += pos;
 
         group = reallocf(group, len);

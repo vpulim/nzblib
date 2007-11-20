@@ -39,8 +39,14 @@
  *
  * CRC32 code derived from work by Gary S. Brown.
  */
-#include <stdint.h>
+
 #include <stdlib.h>
+
+#ifdef WIN32
+#	include "compat/stdint.h"
+#else
+#	include <stdint.h>
+#endif
 
 #include "crc32.h"
 

@@ -27,11 +27,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <assert.h>
-#include <netdb.h>
+
+#ifdef WIN32
+#	include "compat/vasprintf.h"
+#	include <windows.h>
+#	include "compat/win32.h"
+#	define herror perror
+#else
+#	include <sys/types.h>
+#	include <sys/socket.h>
+#	include <netdb.h>
+#endif
+
 #include <stdarg.h>
 
 #include "global.h"
@@ -52,6 +60,7 @@ int net_prepare_connection(server_t *server)
 
     if (hp == NULL)
     {
+		
         herror("Error");
         return -1;
     }
@@ -70,7 +79,7 @@ int net_connect(struct sockaddr_in * addr)
 {
     int sock, ret;
     
-    sock = socket(PF_INET,SOCK_STREAM, 0);
+    sock = (int)socket(PF_INET,SOCK_STREAM, 0);
     ret = connect(sock, (struct sockaddr *)addr, sizeof(struct sockaddr));
     if (ret != 0)
     {
@@ -122,9 +131,12 @@ int net_send(int sock, char *format, ...)
     assert (buffer != NULL);
     assert (ret > 0);
         
+#ifdef WIN32
+    ret = send(sock, buffer, (int)strlen(buffer), 0);
+#else
+	ret = send(sock, buffer, strlen(buffer), 0);
+#endif
 
-    ret = send(sock, buffer, strlen(buffer), 0);
-    
     if (ret == -1)
     {
         perror("Unable to send");
@@ -142,7 +154,11 @@ int net_send(int sock, char *format, ...)
  */
 void net_disconnect(int sock)
 {
+#ifdef WIN32
+	closesocket((SOCKET)sock);
+#else
     close(sock);
+#endif
 }
 
 

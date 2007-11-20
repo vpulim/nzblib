@@ -26,6 +26,9 @@
 
 #ifndef _YENC_H
 #define _YENC_H
+#ifdef WIN32
+#include "compat/stdint.h"
+#endif
 
 #include "segment.h"
 

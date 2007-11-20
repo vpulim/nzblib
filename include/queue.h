@@ -32,7 +32,18 @@
 #include "segment.h"
 
 
-#include <pthread.h>
+#ifdef WIN32
+  #include <string.h>
+  #include <conio.h>
+  #include <process.h>
+
+#define MUTEX HANDLE
+#define COND HANDLE
+#else 
+  #include <pthread.h>
+#define MUTEX pthread_mutex_t
+#define COND pthread_cond_t
+#endif
 
 /*!
  * A structure which contains a reference to a segment. This item is referenced
@@ -52,11 +63,11 @@ typedef struct queue_item_s
  */
 typedef struct queue_list_s
 {
-    pthread_mutex_t mtx_queue;
-    pthread_mutex_t mtx_data;
-    pthread_mutex_t mtx_cond;
+    MUTEX mtx_queue;
+    MUTEX mtx_data;
+    MUTEX mtx_cond;
 
-    pthread_cond_t cond_item;       // Protected by mtx_cond
+    COND cond_item;       // Protected by mtx_cond
     
     char *id;
     

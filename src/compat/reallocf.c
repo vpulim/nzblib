@@ -25,11 +25,11 @@
  */
 
 
-#include "config.h"
-
 #if !HAVE_REALLOCF
 
+#ifndef WIN32
 #include <sys/cdefs.h>
+#endif
 
 /*
 __FBSDID("$FreeBSD: src/lib/libc/stdlib/reallocf.c,v 1.4 2002/03/22 21:53:10 obrien Exp $");

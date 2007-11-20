@@ -29,10 +29,14 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "config.h"
-
 #if !HAVE_REALLOCF
-#   include "reallocf.h"
+#   include "compat/reallocf.h"
+#endif
+
+#ifdef WIN32
+#	include <windows.h>
+#	include <process.h>
+#	include "compat/win32.h"
 #endif
 
 #include "net.h"
@@ -52,7 +56,11 @@
 nzb_fetch *nzb_fetch_init()
 {
     nzb_fetch *fetcher;
-    
+    int ret;
+#ifdef WIN32
+	WSADATA wsaData;
+#endif
+
     fetcher = malloc(sizeof(nzb_fetch));
     
     fetcher->queue = queue_list_create();
@@ -67,13 +75,28 @@ nzb_fetch *nzb_fetch_init()
     fetcher->priority_queues[0] = fetcher->queue;
     
     fetcher->servers = NULL;
-    
+
+#ifdef WIN32
+
+    ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (ret != 0) {
+        printf("WSAStartup failed: %d\n", ret);
+        return NULL;
+	}
+#endif
+
+#ifdef WIN32
+	_beginthread(&process_data_queue,
+				 0,
+				 (void *)fetcher);
+#else
     pthread_create( &fetcher->process_thread_id,
                     NULL,
                     &process_data_queue,
                     (void *)fetcher
                    );
-            
+#endif
+				 
     return fetcher;
 }
 
@@ -162,19 +185,26 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
         // Create a thread for each connection, see nttp_connection.c
         for(i = 0; i < server->num_threads; i++)
         {
+			printf("Creating connection to %s\n", server->address);
             server->threads[i].thread_num = i + connections;
             server->threads[i].server = server;
             
             server->threads[i].queues = fetcher->priority_queues;
             server->threads[i].data_queue = fetcher->data_queue;
-            
+#ifdef WIN32
+			_beginthread(&nttp_connection,
+						 0,
+						 (void *)&server->threads[i]
+			);
+#else
             pthread_create( &server->threads[i].thread_id,
                             NULL,
                             &nttp_connection,
                             (void *)&server->threads[i]
                            );
+#endif
         }
-        
+      
         connections += server->num_threads;
         
     }
@@ -209,6 +239,7 @@ nzb_file *nzb_fetch_parse(char *filename)
 int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete)
 {
     fetcher->callback_file_complete = file_complete;
+	return 0;
 }
 
 int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files)
@@ -248,6 +279,8 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
     fetcher->file = filelist->file;
     
     printf("Putting file %s on the queue\n", filelist->filename);
+
+	
     for (i = 0; i < post->num_segments; i++)
     {
         if (file_chunk_exists(post->segments[i], filelist->file))
@@ -266,5 +299,5 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
 int nzb_fetch_file_complete(nzb_fetch *fetcher, post_t *post)
 {
     (*fetcher->callback_file_complete)((nzb_file_info *)post->client_data);
+	return 0;
 }
-

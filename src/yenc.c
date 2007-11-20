@@ -26,23 +26,24 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
 
-#include "config.h"
-
 #if !HAVE_REALLOCF
-#   include "reallocf.h"
+#   include "compat/reallocf.h"
+#endif
+
+#ifdef WIN32
+#	include "compat/win32.h"
+#	include "compat/stdint.h"
+#	include "compat/strsep.h"
+#else
+#	include <stdint.h>
 #endif
 
 #include "crc32.h"
 #include "yenc.h"
 
-#ifdef DEBUG
-#include "post.h"
-
-#endif
 
 /*
  * Yenc decode the data in segment->data and store it in segment->decoded_data
@@ -97,7 +98,7 @@ int yenc_decode(segment_t *segment)
         }
         else if (in_data)
         {
-            for (i = 0, len = strlen(p); i < len; i++)
+            for (i = 0, len = (int)strlen(p); i < len; i++)
             {
                 ch = p[i];
 

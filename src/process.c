@@ -28,12 +28,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <pthread.h>
-#include <unistd.h>
+
+#ifdef WIN32
+#	include <process.h>
+#else
+#	include <pthread.h>
+#	include <unistd.h>
+#endif
 
 
-#include "process.h"
 #include "yenc.h"
+#include "process.h"
+
 #include "segment.h"
 #include "file.h"
 #include "nzb_fetch.h"
@@ -96,7 +102,11 @@ void *process_data_queue(void *arg)
         segment->decoded_size = 0;
         queue_item_destroy(queue_item);
     }   
+#ifdef WIN32
+	_endthread();
+#else
     pthread_exit(NULL);
+#endif
 }
 
 

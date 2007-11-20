@@ -11,10 +11,13 @@ libnzb_fetch_la_SOURCES = \
         post.c \
         process.c \
         queue.c \
-        reallocf.c \
         segment.c \
         server.c \
-        yenc.c 
+        yenc.c \
+        compat\reallocf.c \
+        compat\asprintf.c \
+        compat\vasprintf.c \
+        compat\strsep.c
             
 libnzb_fetch_la_CLFAGS = -include config.h
 libnzb_fetch_la_LIBADD = ${EXPAT_LIB}

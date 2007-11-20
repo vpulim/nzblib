@@ -26,9 +26,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
+
+#ifdef WIN32
+#	include <process.h>
+#	include "compat/reallocf.h"
+#	include "compat/win32.h"
+#endif
 
 #include "post.h"
 #include "net.h"
@@ -37,6 +42,8 @@
 #include "global.h"
 #include "net.h"
 #include "yenc.h"
+
+
 
 /*!
  * Connect to the NTTP server and check for status code 200 or 201. Return 0
@@ -119,11 +126,11 @@ int nttp_authenticate(int sock, char *username, char *password)
  */
 int nttp_get_status_code(char *buffer)
 {
-    char status_code[3];
+    char status_code[4];
     int code;
     
     strncpy(status_code, buffer, 3);
-    status_code[3] = 0;
+    status_code[3] = '\0';
 
     code = strtol(status_code, (char **)NULL, 10);
     
@@ -205,7 +212,7 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
 
         memcpy(segment->data + segment->bytes, data, bytes);
         
-        free(data);
+        //free(data);
         segment->bytes += bytes;
         
         // Check if we have recevied all bytes
@@ -286,8 +293,14 @@ void *nttp_connection(void *arg)
     } while (1);
 
 exit:
- 
+
+#ifdef WIN32
+	_endthread();
+	return NULL;
+#else
     pthread_exit(NULL);
+#endif
+
 }
     
     

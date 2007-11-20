@@ -27,7 +27,11 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
-#include <netinet/in.h>
+#ifdef WIN32
+#	include <windows.h>
+#else
+#	include <netinet/in.h>
+#endif
 
 #include "nzb_fetch.h"
 #include "queue.h"

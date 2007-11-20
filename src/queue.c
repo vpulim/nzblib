@@ -26,14 +26,12 @@
 
 #include <stdlib.h>
 #include <assert.h>
-
 #include <stdio.h>
 
-#include "config.h"
-
 #if !HAVE_REALLOCF
-#   include "reallocf.h"
+#   include "compat/reallocf.h"
 #endif
+
 
 #include "global.h"
 #include "post.h"
@@ -123,10 +121,16 @@ queue_list_t * queue_list_create()
 {
     queue_list_t *queue_list;
     queue_list = malloc(sizeof(queue_list_t));
+
+
+#ifdef WIN32
+	queue_list->cond_item = CreateEvent(NULL, 0, 0, "QueueSignal" );
+#else
     pthread_mutex_init(&queue_list->mtx_queue, NULL);
     pthread_mutex_init(&queue_list->mtx_cond, NULL);
     pthread_cond_init(&queue_list->cond_item, NULL);
-    
+#endif
+
     queue_list->first = NULL;
     queue_list->last = NULL;
     queue_list->id = NULL;
@@ -139,9 +143,13 @@ queue_list_t * queue_list_create()
  */
 void queue_list_sleep(queue_list_t *queue)
 {
-    MTX_LOCK(&queue->mtx_cond);
+#ifdef WIN32
+	WaitForSingleObject(queue->cond_item, INFINITE);
+#else
+	MTX_LOCK(&queue->mtx_cond);
     pthread_cond_wait(&queue->cond_item, &queue->mtx_cond);
-    MTX_UNLOCK(&queue->mtx_cond);
+	MTX_UNLOCK(&queue->mtx_cond);
+#endif
 }
 
 /*!
@@ -213,7 +221,7 @@ queue_item_t * queue_list_shift(queue_list_t  *queue_list, server_t *server)
  */
 queue_item_t * queue_list_pop(queue_list_t  *queue_list, server_t *server)
 {
-    assert(0); // THis function is not workig atm
+    //assert(0); // THis function is not workig atm
     queue_item_t *queue_item;
     
     MTX_LOCK(&queue_list->mtx_queue);
@@ -264,10 +272,13 @@ void queue_list_append(queue_list_t *queue_list, queue_item_t *queue_item)
     
     MTX_UNLOCK(&queue_list->mtx_queue);
 
+#ifdef WIN32
+	SetEvent(queue_list->cond_item);
+#else
     MTX_LOCK(&queue_list->mtx_cond);
     pthread_cond_signal(&queue_list->cond_item);
     MTX_UNLOCK(&queue_list->mtx_cond);
-    
+#endif
     
 }
 
@@ -293,9 +304,12 @@ void queue_list_prepend(queue_list_t *queue_list, queue_item_t *queue_item)
     
     MTX_UNLOCK(&queue_list->mtx_queue);
     
-
+#ifdef WIN32
+	SetEvent(queue_list->cond_item);
+#else
     MTX_LOCK(&queue_list->mtx_cond);
     pthread_cond_signal(&queue_list->cond_item);
     MTX_UNLOCK(&queue_list->mtx_cond);
+#endif
         
 }

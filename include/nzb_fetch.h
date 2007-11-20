@@ -27,17 +27,22 @@
 #ifndef _LIBNZB_FETCH_H
 #define _LIBNZB_FETCH_H
 
-#include <pthread.h>
+#ifdef WIN32
+#	include <string.h>
+#	include <conio.h>
+#	include <process.h>
+#	define THREAD_ID int
+#else 
+#	include <pthread.h>
+#	define THREAD_ID pthread_t
+#endif
 
 #include "post.h"
 #include "server.h"
 #include "queue.h"
 
-
 #define FILE_COMPLETE   1
-
 struct nzb_file_info_s;
-
 
 typedef struct nzb_file_s
 {
@@ -56,9 +61,9 @@ typedef struct nzb_fetch_s
     struct queue_list_s *data_queue;
     struct queue_list_s **priority_queues;
     struct nzb_file_s *file;
-    pthread_t process_thread_id;
-    
-    void (*callback_file_complete)(struct nzb_file_info_s*);
+    THREAD_ID process_thread_id;
+
+	void (*callback_file_complete)(struct nzb_file_info_s*);
 } nzb_fetch;
 
 
@@ -66,14 +71,13 @@ typedef struct nzb_file_info_s
 {
     char *filename;
     
-    
-    nzb_file *file;         /*!< Internal: Reference to nzb file object */
-    struct post_s *post;    /*!< Internal: Reference to the post object*/
+    nzb_file *file;
+    struct post_s *post;
 } nzb_file_info;
 
 
 
-int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete);
+
 nzb_fetch * nzb_fetch_init(void);
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          char *username, char *password, int threads,
@@ -85,5 +89,7 @@ int nzb_fetch_storage_path(nzb_file *file, char *path);
 int nzb_fetch_temporary_path(nzb_file *file, char *path);
 int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *file_info);
 int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files);
-
+int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete);
+int nzb_fetch_file_complete(nzb_fetch *fetcher, struct post_s *post);
 #endif
+

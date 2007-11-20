@@ -27,8 +27,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN32
+#	include "compat/win32.h"
+#endif
+
 #include "server.h"
 #include "nzb_fetch.h"
+
+
 
 /*!
  * Swap two pointer values

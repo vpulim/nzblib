@@ -28,10 +28,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef WIN32
+#	include <io.h>
+#	include "compat/asprintf.h"
+#	include "compat/win32.h"
+#	define PATH_MAX _MAX_PATH
+#else
 #include <unistd.h>
+
+
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <stdlib.h>
+#endif
 #include <assert.h>
 
 #include "file.h"
@@ -45,9 +55,12 @@ char *file_get_path(char *path)
     char resolved_path[PATH_MAX];
     char *result;
     char *err_string;
-    
+
+#ifdef WIN32
+	result = _fullpath(resolved_path, path, PATH_MAX);
+#else
     result = realpath(path, resolved_path);
-    
+#endif
     if (result == NULL)
     {
         asprintf(&err_string, "Unable to write to '%s'", path);
@@ -55,8 +68,12 @@ char *file_get_path(char *path)
         free(err_string);
         return NULL;
     }
-    
+#ifdef WIN32
+	return strdup(resolved_path);
+#else
     return result;
+#endif
+
 }
 
 /*
@@ -79,6 +96,7 @@ int file_write_chunk(segment_t *segment, nzb_file *file)
     else
     {
         perror("Error while saving file");
+		printf("To %s\n", filename);
         free(filename);
         return -1;
     }
@@ -123,14 +141,14 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     char *filename;
     char *path;
     
-    path = file_get_path(file->temporary_path);
+	path = file_get_path(file->temporary_path);
     
     if (path == NULL)
         return NULL;
     
     assert(segment->post->filename != NULL);
     
-    asprintf(&filename, "%s/%s.segment.%03d", path,
+    asprintf(&filename, "%s\\%s.segment.%03d", path,
              segment->post->filename, segment->number);
     
     //free(path);
@@ -147,7 +165,7 @@ char * file_get_complete_filename(post_t *post, nzb_file *file)
         assert(0);
         return NULL;
     }
-    asprintf(&filename, "%s/%s", path, post->filename);
+    asprintf(&filename, "%s\\%s", path, post->filename);
     
     return filename;
 }
@@ -159,12 +177,14 @@ int file_combine(post_t * post, nzb_file *file)
     char buffer[BUFFER_SIZE];
     FILE *fp_chunk, *fp_target;
     int i;
-    int bytes;
+    size_t bytes;
     
     // Open the target file
     filename = file_get_complete_filename(post, file);
-    
+
     fp_target = fopen(filename, "w");
+
+	assert(fp_target != NULL);
 
     free(filename);
     //free(path);
@@ -184,7 +204,7 @@ int file_combine(post_t * post, nzb_file *file)
         
         // Create the filename
         // TODO change ->number in yenc_part
-        asprintf(&filename, "%s/%s.segment.%03d", path,
+        asprintf(&filename, "%s\\%s.segment.%03d", path,
                 post->filename, post->segments[i]->number);
         
         fp_chunk = fopen(filename, "r");
@@ -205,7 +225,7 @@ int file_combine(post_t * post, nzb_file *file)
         
         while(!feof(fp_chunk))
         {
-            bytes = fread(&buffer, 1, BUFFER_SIZE-1, fp_chunk);
+            bytes = fread(&buffer, (size_t)1, (size_t)BUFFER_SIZE-1, fp_chunk);
             fwrite(&buffer, 1, bytes, fp_target);
         }
         fclose(fp_chunk);
@@ -219,12 +239,12 @@ int file_combine(post_t * post, nzb_file *file)
 int file_chunk_exists(segment_t *segment, nzb_file *file)
 {
     char *filename;
-    struct stat buf;
     int ret;
-
+	
     filename = file_get_chunk_filename(segment, file);
+	return 0;
 
-    ret = stat(filename, &buf);
+    ret = access(filename, /* F_OK */ 0);
     free(filename);
     
     if(ret == 0)
@@ -236,12 +256,11 @@ int file_chunk_exists(segment_t *segment, nzb_file *file)
 int file_complete_exists(post_t *post, nzb_file *file)
 {
     char *filename;
-    struct stat buf;
     int ret;
 
     filename = file_get_complete_filename(post, file);
 
-    ret = stat(filename, &buf);
+    ret = access(filename, /* F_OK */ 0);
     free(filename);
     
     if(ret == 0)
