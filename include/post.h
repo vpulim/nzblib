@@ -27,13 +27,14 @@
 #ifndef _POST_H
 #define _POST_H
 
+
+
 #include <pthread.h>
 
 #include "server.h"
 #include "segment.h"
 #include "queue.h"
 
-#define FILE_COMPLETE   0x01
 
 
 #define SEGMENT_NEW             2
@@ -60,6 +61,8 @@ typedef struct post_s
     struct segment_s **segments;    //!< Array with segments
     int *segments_status;           //!< Flags for the segment status
     int *segments_;
+    
+    void *client_data;
     
     struct post_s *next, *prev;
 } post_t;

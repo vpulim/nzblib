@@ -34,6 +34,10 @@
 #include "queue.h"
 
 
+#define FILE_COMPLETE   1
+
+struct nzb_file_info_s;
+
 
 typedef struct nzb_file_s
 {
@@ -53,6 +57,8 @@ typedef struct nzb_fetch_s
     struct queue_list_s **priority_queues;
     struct nzb_file_s *file;
     pthread_t process_thread_id;
+    
+    void (*callback_file_complete)(struct nzb_file_info_s*);
 } nzb_fetch;
 
 
@@ -60,13 +66,14 @@ typedef struct nzb_file_info_s
 {
     char *filename;
     
-    nzb_file *file;
-    struct post_s *post;
+    
+    nzb_file *file;         /*!< Internal: Reference to nzb file object */
+    struct post_s *post;    /*!< Internal: Reference to the post object*/
 } nzb_file_info;
 
 
 
-
+int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete);
 nzb_fetch * nzb_fetch_init(void);
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          char *username, char *password, int threads,
