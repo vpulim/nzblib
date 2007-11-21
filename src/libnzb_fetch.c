@@ -50,6 +50,7 @@
 #include "server.h"
 
 
+static char const rcsid[] = "$Id: Copyright (c) 2004-2007 Michael van Tellingen.  All rights reserved.$";
 /*!
  * Initialize nzb_fetch
  */
@@ -214,15 +215,16 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
 
 int nzb_fetch_storage_path(nzb_file *file, char *path)
 {
-    file->storage_path = strdup(path);
-    return 0;
+    file->storage_path = file_get_path(path);
+
+	return access(file->storage_path, 0);
 }
 
 int nzb_fetch_temporary_path(nzb_file *file, char *path)
 {
-    file->temporary_path = strdup(path);
-    
-    return 0;
+    file->temporary_path = file_get_path(path);
+	
+	return access(file->temporary_path, 0);
 }
 
 nzb_file *nzb_fetch_parse(char *filename)
