@@ -87,7 +87,12 @@ int file_write_chunk(segment_t *segment, nzb_file *file)
     
     filename = file_get_chunk_filename(segment, file);
     
+#ifdef WIN32
+    fp = fopen(filename, "wb"); // add T
+#else
     fp = fopen(filename, "w");
+#endif
+
     if(fp != NULL)
     {
         fwrite(segment->decoded_data, 1, segment->decoded_size, fp);
@@ -182,7 +187,11 @@ int file_combine(post_t * post, nzb_file *file)
     // Open the target file
     filename = file_get_complete_filename(post, file);
 
+#ifdef WIN32
+    fp_target = fopen(filename, "wb");
+#else
     fp_target = fopen(filename, "w");
+#endif
 
 	assert(fp_target != NULL);
 
@@ -207,7 +216,11 @@ int file_combine(post_t * post, nzb_file *file)
         asprintf(&filename, "%s\\%s.segment.%03d", path,
                 post->filename, post->segments[i]->number);
         
+#ifdef WIN32
+        fp_chunk = fopen(filename, "rb");
+#else
         fp_chunk = fopen(filename, "r");
+#endif
 
         // The chunk went missing, return -1 so that the process thread can
         // identify the problem.
