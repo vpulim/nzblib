@@ -25,7 +25,7 @@
  */
 
 
-#if !HAVE_REALLOCF
+#ifndef HAVE_REALLOCF
 
 #ifndef WIN32
 #include <sys/cdefs.h>

@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#ifndef HAVE_STRSEP
+
 #include <string.h>
 #include <stdio.h>
 
@@ -69,3 +71,5 @@ strsep(char **stringp, const char *delim)
 	}
 	/* NOTREACHED */
 }
+
+#endif

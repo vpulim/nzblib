@@ -1,4 +1,5 @@
 INCLUDES = -I$(top_srcdir)/include
+SUBDIRS = compat
 
 lib_LTLIBRARIES = libnzb_fetch.la
 libnzb_fetch_la_SOURCES = \
@@ -13,12 +14,10 @@ libnzb_fetch_la_SOURCES = \
         queue.c \
         segment.c \
         server.c \
-        yenc.c \
-        compat\reallocf.c \
-        compat\asprintf.c \
-        compat\vasprintf.c \
-        compat\strsep.c
+        yenc.c 
+
+
             
 libnzb_fetch_la_CLFAGS = -include config.h
-libnzb_fetch_la_LIBADD = ${EXPAT_LIB}
+libnzb_fetch_la_LIBADD = ${EXPAT_LIB} compat/libcompat.la
 
