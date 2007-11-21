@@ -49,6 +49,10 @@ AC_SUBST(EXPAT_LIBS)
 ##
 # Check for reallocf (FreeBSD api)
 AC_CHECK_FUNCS([reallocf])
+AC_CHECK_FUNCS([asprintf])
+AC_CHECK_FUNCS([vasprintf])
+AC_CHECK_FUNCS([strsep])
+
 
 
 
@@ -67,6 +71,7 @@ AC_CONFIG_FILES([
     Makefile
     include/Makefile
     src/Makefile
+    src/compat/Makefile
     example/Makefile
 ])
 AC_OUTPUT
