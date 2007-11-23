@@ -76,7 +76,7 @@ void server_sort(server_t * arr[], int beg, int end)
 
 
 server_t *server_create(char *address, int port, char *username,
-                        char *password, int threads, int priority)
+                        char *password, int threads, int ssl, int priority)
 {
     server_t * server;
     
@@ -87,6 +87,7 @@ server_t *server_create(char *address, int port, char *username,
     server->password = strdup(password);
     server->num_threads = threads;
     server->user_priority = priority;
+    server->ssl = ssl;
     server->priority = -1;
     server->prev = NULL;
     server->next = NULL;

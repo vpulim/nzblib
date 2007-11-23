@@ -93,7 +93,7 @@ void *process_data_queue(void *arg)
 
         if (ret == 0)
         {
-            file_combine(segment->post, fetcher->file);
+            //file_combine(segment->post, fetcher->file);
             nzb_fetch_file_complete(fetcher, segment->post);
             //types_free_post(segment->post);
         }

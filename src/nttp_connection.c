@@ -55,11 +55,11 @@ int nttp_connect(struct connection_thread *ct)
     int status_code;
     int bytes;
 
-    ct->sock = net_connect(&ct->server->server_addr);
-    bytes = net_recv(ct->sock, &data);
+    ct->connection = net_connect(&ct->server->server_addr, ct->server->ssl);
+    bytes = net_recv(ct->connection, &data);
     if (bytes < 0)
         return -1;
-    
+
     status_code = nttp_get_status_code(data);
     free(data);
 
@@ -75,7 +75,7 @@ int nttp_connect(struct connection_thread *ct)
  * Authenticate on the NTTP server, except if the username or password are
  * null.
  */
-int nttp_authenticate(int sock, char *username, char *password)
+int nttp_authenticate(connection_t *conn, char *username, char *password)
 {
     char *data;
     int status_code;
@@ -85,9 +85,9 @@ int nttp_authenticate(int sock, char *username, char *password)
         return 0;
 
     // Send username
-    net_send(sock, "AUTHINFO USER %s\n", username);
+    net_send(conn, "AUTHINFO USER %s\n", username);
     
-    bytes = net_recv(sock, &data);
+    bytes = net_recv(conn, &data);
     if (data == NULL)
         return -1;
     
@@ -102,9 +102,9 @@ int nttp_authenticate(int sock, char *username, char *password)
     }
     
     // Send password
-    net_send(sock, "AUTHINFO PASS %s\n", password);
+    net_send(conn, "AUTHINFO PASS %s\n", password);
 
-    bytes = net_recv(sock, &data);
+    bytes = net_recv(conn, &data);
     if (data == NULL)
         return -1;
     
@@ -141,11 +141,11 @@ int nttp_get_status_code(char *buffer)
 /*!
  * Logout and cleanup the socket.
  */
-void nttp_disconnect(int sock)
+void nttp_disconnect(connection_t *conn)
 {
-    net_send(sock, "quit\n");
+    net_send(conn, "quit\n");
     
-    net_disconnect(sock);
+    net_disconnect(conn);
 }
 
 
@@ -153,15 +153,15 @@ void nttp_disconnect(int sock)
  * Select a newsgroup on the NTTP server.
  * TODO: Check if the group is already selected before issueing the command?
  */
-int nttp_select_group(int sock, char *group)
+int nttp_select_group(connection_t *conn, char *group)
 {
     char *data;
     int status_code;
     
     // Send password
-    net_send(sock, "GROUP %s\n", group);
+    net_send(conn, "GROUP %s\n", group);
 
-    net_recv(sock, &data);
+    net_recv(conn, &data);
     
     if (data == NULL)
         return -1;
@@ -182,16 +182,16 @@ int nttp_select_group(int sock, char *group)
  * stored in the segment structure (segment->message). The resulting data will
  * be saved as segment->data and the number of bytes in segment->bytes
  */
-int nttp_retrieve_segment(int sock, segment_t *segment)
+int nttp_retrieve_segment(connection_t *conn, segment_t *segment)
 {
     char *data;
     int status_code;
     int bytes = 0;
-    net_send(sock, "BODY <%s>\n", segment->messageid);
+    net_send(conn, "BODY <%s>\n", segment->messageid);
     
     assert(segment->bytes == 0);
     
-    bytes = net_recv(sock, &data);
+    bytes = net_recv(conn, &data);
     if (data == NULL)
         return -1;
     
@@ -207,8 +207,8 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
     do
     {
         // Fixme. Realloc might fail
-        segment->data = reallocf(segment->data,
-                                 segment->bytes + bytes + 1);
+        segment->data = realloc(segment->data,
+                                segment->bytes + bytes + 1);
 
         memcpy(segment->data + segment->bytes, data, bytes);
         
@@ -224,7 +224,7 @@ int nttp_retrieve_segment(int sock, segment_t *segment)
             break;
         }
         
-        bytes = net_recv(sock, &data);
+        bytes = net_recv(conn, &data);
         
     } while (1);
 
@@ -255,7 +255,7 @@ void *nttp_connection(void *arg)
             goto reconnect;
         }
     
-        ret = nttp_authenticate(ct->sock,
+        ret = nttp_authenticate(ct->connection,
                                 ct->server->username,
                                 ct->server->password);
     
@@ -326,23 +326,24 @@ int nttp_process_queue(struct connection_thread *ct)
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
-        printf("[Thread %d] Downloading segment %s.%03d (%d)\n",
-               ct->thread_num,
-               queue_item->segment->post->filename,
-               queue_item->segment->index,
-               (int)queue_item->segment->post->filesize);
+        //printf("[Thread %d] Downloading segment %s.%03d (%d)\n",
+        //       ct->thread_num,
+        //       queue_item->segment->post->filename,
+        //       queue_item->segment->index,
+        //       (int)queue_item->segment->post->filesize);
         
         // Select group if the correct one isn't selected
         // We should iterate the groups if the first one isn't avail
         if (current_group == NULL ||
             strcmp(queue_item->segment->post->groups[0], current_group) != 0)
         {
-            nttp_select_group(ct->sock, queue_item->segment->post->groups[0]);
+            nttp_select_group(ct->connection,
+                              queue_item->segment->post->groups[0]);
             current_group = queue_item->segment->post->groups[0];
         }
         
 
-        ret = nttp_retrieve_segment(ct->sock, queue_item->segment);
+        ret = nttp_retrieve_segment(ct->connection, queue_item->segment);
         if (ret < 0)
         {
             // Error retrieving segment

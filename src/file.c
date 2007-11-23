@@ -56,14 +56,15 @@ char *file_get_path(char *path)
     char *result;
     char *err_string;
 
+    printf("path = %s\n", path);
 #ifdef WIN32
-	result = _fullpath(resolved_path, path, PATH_MAX);
+    result = _fullpath(resolved_path, path, PATH_MAX);
 #else
     result = realpath(path, resolved_path);
 #endif
     if (result == NULL)
     {
-        asprintf(&err_string, "Unable to write to '%s'", path);
+        asprintf(&err_string, "Unable to get realpath '%s'", path);
         perror(err_string);
         free(err_string);
         return NULL;
@@ -88,7 +89,7 @@ int file_write_chunk(segment_t *segment, nzb_file *file)
     filename = file_get_chunk_filename(segment, file);
     
 #ifdef WIN32
-    fp = fopen(filename, "wb"); // add T
+    fp = fopen(filename, "wbT"); // add T
 #else
     fp = fopen(filename, "w");
 #endif
@@ -146,14 +147,16 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     char *filename;
     char *path;
     
-	path = file_get_path(file->temporary_path);
+    
+    path = file_get_path(file->temporary_path);
+    printf("==> %s\n", file->temporary_path);
     
     if (path == NULL)
         return NULL;
     
     assert(segment->post->filename != NULL);
     
-    asprintf(&filename, "%s\\%s.segment.%03d", path,
+    asprintf(&filename, "%s%s%s.segment.%03d", path, PATH_SEP,
              segment->post->filename, segment->number);
     
     //free(path);
@@ -170,7 +173,7 @@ char * file_get_complete_filename(post_t *post, nzb_file *file)
         assert(0);
         return NULL;
     }
-    asprintf(&filename, "%s\\%s", path, post->filename);
+    asprintf(&filename, "%s%s%s", path, PATH_SEP, post->filename);
     
     return filename;
 }
@@ -213,7 +216,7 @@ int file_combine(post_t * post, nzb_file *file)
         
         // Create the filename
         // TODO change ->number in yenc_part
-        asprintf(&filename, "%s\\%s.segment.%03d", path,
+        asprintf(&filename, "%s%s%s.segment.%03d", path, PATH_SEP,
                 post->filename, post->segments[i]->number);
         
 #ifdef WIN32

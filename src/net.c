@@ -38,6 +38,7 @@
 #	include <sys/types.h>
 #	include <sys/socket.h>
 #	include <netdb.h>
+#	include <openssl/ssl.h>
 #endif
 
 #include <stdarg.h>
@@ -46,7 +47,15 @@
 #include "server.h"
 #include "net.h"
 
+static SSL_CTX *ssl_context;
 
+
+int net_ssl_init()
+{
+    SSL_load_error_strings();
+    SSL_library_init();
+    ssl_context = SSL_CTX_new(SSLv2_client_method());
+}
 
 /*
  * Prepare the server structure to create a connection to the NTTP server.
@@ -75,18 +84,30 @@ int net_prepare_connection(server_t *server)
 /*
  * Connect to the NTTP server and return the created socket
  */
-int net_connect(struct sockaddr_in * addr)
+connection_t *net_connect(struct sockaddr_in * addr, int ssl)
 {
-    int sock, ret;
+    int ret;
+    connection_t *conn = malloc(sizeof(connection_t));
     
-    sock = (int)socket(PF_INET,SOCK_STREAM, 0);
-    ret = connect(sock, (struct sockaddr *)addr, sizeof(struct sockaddr));
+    conn->use_ssl = ssl;
+    
+    conn->sock = (int)socket(PF_INET, SOCK_STREAM, 0);
+    
+    ret = connect(conn->sock , (struct sockaddr *)addr, sizeof(struct sockaddr));
+    
     if (ret != 0)
     {
         perror("Unable to connect");
     }
     
-    return sock;
+    if (conn->use_ssl)
+    {
+	conn->ssl = SSL_new(ssl_context);
+	ret = SSL_set_fd(conn->ssl, conn->sock);
+	ret = SSL_connect(conn->ssl);
+    }
+    
+    return conn;
 }
 
 /*
@@ -94,13 +115,16 @@ int net_connect(struct sockaddr_in * addr)
  * argument. This functions mallocs BUFFER_SIZE stores the information in
  * the data pointer and returns the number of bytes.
  */
-int net_recv(int sock, char **data)
+int net_recv(connection_t *conn, char **data)
 {
     int bytes;
 
     *data = malloc(sizeof(char) * BUFFER_SIZE);
     
-    bytes = recv(sock, *data, BUFFER_SIZE, 0);
+    if (conn->use_ssl)
+	bytes = SSL_read(conn->ssl, *data, BUFFER_SIZE);
+    else
+	bytes = recv(conn->sock, *data, BUFFER_SIZE, 0);
     
     if (bytes == -1)
     {
@@ -109,6 +133,7 @@ int net_recv(int sock, char **data)
         data = NULL;
         return -1;
     }
+    
     (*data)[bytes] = '\0';
     return bytes;
 }
@@ -117,7 +142,7 @@ int net_recv(int sock, char **data)
  * Send data to the NTTP server. This function uses va_start/va_end to let it
  * behave like printf().
  */
-int net_send(int sock, char *format, ...)
+int net_send(connection_t *conn, char *format, ...)
 {
     va_list argp;
     int ret;
@@ -130,12 +155,20 @@ int net_send(int sock, char *format, ...)
 
     assert (buffer != NULL);
     assert (ret > 0);
-        
-#ifdef WIN32
-    ret = send(sock, buffer, (int)strlen(buffer), 0);
-#else
-	ret = send(sock, buffer, strlen(buffer), 0);
-#endif
+    
+    if (conn->use_ssl)
+    {
+	ret = SSL_write(conn->ssl, buffer, strlen(buffer));
+    }
+    else
+    {
+#   ifdef WIN32
+	ret = send(conn->sock, buffer, (int)strlen(buffer), 0);
+#   else
+	ret = send(conn->sock, buffer, strlen(buffer), 0);
+#   endif
+    }
+    
 
     if (ret == -1)
     {
@@ -152,13 +185,14 @@ int net_send(int sock, char *format, ...)
 /*
  * Disconnect from the server
  */
-void net_disconnect(int sock)
+void net_disconnect(connection_t *conn)
 {
 #ifdef WIN32
-	closesocket((SOCKET)sock);
+    closesocket((SOCKET)conn->sock);
 #else
-    close(sock);
+    close(conn->sock);
 #endif
+    //free(conn);
 }
 
 

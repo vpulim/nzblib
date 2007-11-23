@@ -77,6 +77,8 @@ nzb_fetch *nzb_fetch_init()
     
     fetcher->servers = NULL;
 
+    net_ssl_init();
+    
 #ifdef WIN32
 
     ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -103,7 +105,7 @@ nzb_fetch *nzb_fetch_init()
 
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          char *username, char *password, int threads,
-                         int priority)
+                         int ssl, int priority)
 {
     server_t *new_server, *server;
     int required_queues;
@@ -118,7 +120,7 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
     
 
     new_server = server_create(address, port, username, password,
-                               threads, priority);
+                               threads, ssl, priority);
     
     
     // Insert into server linked list
@@ -217,14 +219,14 @@ int nzb_fetch_storage_path(nzb_file *file, char *path)
 {
     file->storage_path = file_get_path(path);
 
-	return access(file->storage_path, 0);
+    return access(file->storage_path, 0);
 }
 
 int nzb_fetch_temporary_path(nzb_file *file, char *path)
 {
     file->temporary_path = file_get_path(path);
 	
-	return access(file->temporary_path, 0);
+    return access(file->temporary_path, 0);
 }
 
 nzb_file *nzb_fetch_parse(char *filename)
@@ -281,8 +283,9 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
     fetcher->file = filelist->file;
     
     printf("Putting file %s on the queue\n", filelist->filename);
-
-	
+    printf("Storing complete file in %s and temp file in %s\n",
+           fetcher->file->storage_path, fetcher->file->temporary_path);
+ 	
     for (i = 0; i < post->num_segments; i++)
     {
         if (file_chunk_exists(post->segments[i], filelist->file))

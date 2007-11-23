@@ -124,7 +124,7 @@ queue_list_t * queue_list_create()
 
 
 #ifdef WIN32
-	queue_list->cond_item = CreateEvent(NULL, 0, 0, "QueueSignal" );
+	queue_list->cond_item = CreateEvent(NULL, 0, 0, NULL);
 #else
     pthread_mutex_init(&queue_list->mtx_queue, NULL);
     pthread_mutex_init(&queue_list->mtx_cond, NULL);
@@ -143,13 +143,17 @@ queue_list_t * queue_list_create()
  */
 void queue_list_sleep(queue_list_t *queue)
 {
+	printf("queue_list_sleep() - SLEEP\n");
 #ifdef WIN32
+	MTX_LOCK(&queue->mtx_cond);
 	WaitForSingleObject(queue->cond_item, INFINITE);
+	MTX_UNLOCK(&queue->mtx_cond);
 #else
 	MTX_LOCK(&queue->mtx_cond);
     pthread_cond_wait(&queue->cond_item, &queue->mtx_cond);
 	MTX_UNLOCK(&queue->mtx_cond);
 #endif
+	printf("queue_list_sleep() - ALIVE\n");
 }
 
 /*!
