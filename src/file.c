@@ -56,7 +56,7 @@ char *file_get_path(char *path)
     char *result;
     char *err_string;
 
-    printf("path = %s\n", path);
+    //printf("path = %s\n", path);
 #ifdef WIN32
     result = _fullpath(resolved_path, path, PATH_MAX);
 #else
@@ -149,7 +149,7 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     
     
     path = file_get_path(file->temporary_path);
-    printf("==> %s\n", file->temporary_path);
+    //printf("==> %s\n", file->temporary_path);
     
     if (path == NULL)
         return NULL;

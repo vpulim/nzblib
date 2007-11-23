@@ -29,10 +29,22 @@
 
 #include "server.h"
 
-int net_prepare_connection(server_t *server);
-int net_connect(struct sockaddr_in * addr);
-int net_recv(int sock, char **data);
-int net_send(int sock, char *format, ...);
-void net_disconnect(int sock);
+#if HAVE_LIBSSL
+#   include <openssl/ssl.h>
+#endif
+
+typedef struct connection_s {
+    int sock;
+    int use_ssl;
+#if HAVE_LIBSSL
+    SSL * ssl;
+#endif
+} connection_t;
+
+int net_prepare_connection(struct server_s *server);
+connection_t* net_connect(struct sockaddr_in * addr, int ssl);
+int net_recv(connection_t *conn, char **data);
+int net_send(connection_t *conn, char *format, ...);
+void net_disconnect(connection_t *conn);
 
 #endif

@@ -50,6 +50,7 @@ typedef struct server_s
     int user_priority;      //!< Priority as specified by client
     int num_threads;        //!< Number of connection threads
     
+    int ssl;                //!< Enable SSL
     int port;               //!< NTTP server port
     char *address;          //!< NTTP server address
     
@@ -67,6 +68,6 @@ void swap(int *a, int *b);
 void server_sort(server_t * arr[], int beg, int end);
 int server_calculate_priorities(struct nzb_fetch_s *fetcher);
 server_t *server_create(char *address, int port, char *username,
-                        char *password, int threads, int priority);
+                        char *password, int threads, int ssl, int priority);
 
 #endif

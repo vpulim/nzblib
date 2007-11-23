@@ -41,7 +41,7 @@
 #include "server.h"
 #include "segment.h"
 #include "queue.h"
-
+#include "net.h"
 
 
 #define SEGMENT_NEW             2
@@ -80,7 +80,7 @@ struct connection_thread
     int thread_num;
     int ready;
 
-    int sock;                         //!< Socket
+    struct connection_s *connection;          //!< TCP Connection
 
     struct queue_list_s **queues;     //!< Array of queues with empy segments
     struct queue_list_s *data_queue;  //!< Pointer to queue with full segments

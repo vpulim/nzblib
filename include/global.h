@@ -34,10 +34,12 @@ extern int num_locked;
 #ifdef WIN32
 	#define MTX_LOCK(s) WaitForSingleObject(s, INFINITE);
 	#define MTX_UNLOCK(s) ReleaseMutex(s);
+	#define PATH_SEP "\\"
 #else
 
 	#define MTX_LOCK(s) pthread_mutex_lock(s);
 	#define MTX_UNLOCK(s) pthread_mutex_unlock(s);
+	#define PATH_SEP "/"
 
 #endif // #IFDEF Win32
 

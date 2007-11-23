@@ -18,6 +18,6 @@ libnzb_fetch_la_SOURCES = \
 
 
             
-libnzb_fetch_la_CLFAGS = -include config.h
-libnzb_fetch_la_LIBADD = ${EXPAT_LIB} compat/libcompat.la
+libnzb_fetch_la_CLFAGS = -include config.h -Werror -Wall
+libnzb_fetch_la_LIBADD = ${EXPAT_LIBS} ${SSL_LIBS} compat/libcompat.la
 

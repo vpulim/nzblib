@@ -77,21 +77,23 @@ nzb_fetch *nzb_fetch_init()
     
     fetcher->servers = NULL;
 
+#if HAVE_LIBSSL 
     net_ssl_init();
-    
+#endif
+
 #ifdef WIN32
 
     ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (ret != 0) {
         printf("WSAStartup failed: %d\n", ret);
         return NULL;
-	}
+    }
 #endif
 
 #ifdef WIN32
-	_beginthread(&process_data_queue,
-				 0,
-				 (void *)fetcher);
+    _beginthread(&process_data_queue,
+                             0,
+                             (void *)fetcher);
 #else
     pthread_create( &fetcher->process_thread_id,
                     NULL,
@@ -117,7 +119,13 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
         return -1;
     }
 
-    
+#if !HAVE_LIBSSL
+    if (ssl > 0)
+    {
+        printf("Error: SSL Support is not compiled in\n");
+        return -1;
+    }
+#endif
 
     new_server = server_create(address, port, username, password,
                                threads, ssl, priority);

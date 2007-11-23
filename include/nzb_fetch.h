@@ -81,7 +81,7 @@ typedef struct nzb_file_info_s
 nzb_fetch * nzb_fetch_init(void);
 int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
                          char *username, char *password, int threads,
-                         int priority);
+                         int ssl, int priority);
 
 nzb_file *nzb_fetch_parse(char *filename);
 int nzb_fetch_connect(nzb_fetch *fetcher);

@@ -13,7 +13,7 @@ nobase_noinst_HEADERS = \
         post.h \
         process.h \
         queue.h \
-        reallocf.h \
+        compat/reallocf.h \
         segment.h \
         server.h \
         yenc.h 

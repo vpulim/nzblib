@@ -47,6 +47,8 @@
 #include "server.h"
 #include "net.h"
 
+#if HAVE_LIBSSL
+
 static SSL_CTX *ssl_context;
 
 
@@ -56,6 +58,9 @@ int net_ssl_init()
     SSL_library_init();
     ssl_context = SSL_CTX_new(SSLv2_client_method());
 }
+
+#endif //HAVE_LIBSSL
+
 
 /*
  * Prepare the server structure to create a connection to the NTTP server.
@@ -100,13 +105,15 @@ connection_t *net_connect(struct sockaddr_in * addr, int ssl)
         perror("Unable to connect");
     }
     
+#if HAVE_LIBSSL
     if (conn->use_ssl)
     {
 	conn->ssl = SSL_new(ssl_context);
 	ret = SSL_set_fd(conn->ssl, conn->sock);
 	ret = SSL_connect(conn->ssl);
     }
-    
+#endif
+
     return conn;
 }
 
@@ -120,11 +127,14 @@ int net_recv(connection_t *conn, char **data)
     int bytes;
 
     *data = malloc(sizeof(char) * BUFFER_SIZE);
-    
+
+#if HAVE_LIBSSL 
     if (conn->use_ssl)
 	bytes = SSL_read(conn->ssl, *data, BUFFER_SIZE);
     else
+#else
 	bytes = recv(conn->sock, *data, BUFFER_SIZE, 0);
+#endif
     
     if (bytes == -1)
     {
@@ -155,21 +165,19 @@ int net_send(connection_t *conn, char *format, ...)
 
     assert (buffer != NULL);
     assert (ret > 0);
-    
+
+#if HAVE_LIBSSL
     if (conn->use_ssl)
-    {
 	ret = SSL_write(conn->ssl, buffer, strlen(buffer));
-    }
     else
-    {
+#else
 #   ifdef WIN32
 	ret = send(conn->sock, buffer, (int)strlen(buffer), 0);
 #   else
 	ret = send(conn->sock, buffer, strlen(buffer), 0);
-#   endif
-    }
+#   endif // WIN32
+# endif // HAVE_LIBSSL
     
-
     if (ret == -1)
     {
         perror("Unable to send");

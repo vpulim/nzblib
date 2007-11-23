@@ -45,6 +45,29 @@ LIBS="${save_LIBS}"
 
 AC_SUBST(EXPAT_LIBS)
 
+##
+# Check for SSL
+save_LIBS="${LIBS}"
+
+LIBS=""
+
+AC_ARG_WITH([ssl], [  --with-ssl=path       specify that ssl is installed at path], [
+    if test -n "$withval"; then
+        CFLAGS="$CFLAGS -I$withval/include"
+        LDFLAGS="$LDFLAGS -L$withval/lib"
+    fi
+])
+
+AC_CHECK_LIB(ssl, SSL_CTX_new,, [AC_MSG_WARN([ssl not found, please us --with-ssl to enable SSL support])])
+AC_CHECK_HEADER([openssl/ssl.h],, [AC_MSG_WARN([openssl/ssl.h not found, please use --with-ssl to enable SSL support])])
+                
+SSL_LIBS="${LIBS}"
+
+
+LIBS="${save_LIBS}"
+
+AC_SUBST(SSL_LIBS)
+
 
 ##
 # Check for reallocf (FreeBSD api)
