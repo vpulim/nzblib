@@ -207,12 +207,12 @@ int nttp_retrieve_segment(connection_t *conn, segment_t *segment)
     do
     {
         // Fixme. Realloc might fail
-        segment->data = realloc(segment->data,
-                                segment->bytes + bytes + 1);
+        segment->data = reallocf(segment->data,
+                                 segment->bytes + bytes + 1);
 
         memcpy(segment->data + segment->bytes, data, bytes);
         
-        //free(data);
+        free(data);
         segment->bytes += bytes;
         
         // Check if we have recevied all bytes
