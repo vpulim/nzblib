@@ -53,7 +53,7 @@ void *process_data_queue(void *arg)
     
     int ret;
     
-    printf("Starting process_data_queue thread\n");
+    //printf("Starting process_data_queue thread\n");
         
     while(1)
     {
@@ -63,6 +63,8 @@ void *process_data_queue(void *arg)
         segment = queue_item->segment;
         
         assert(segment->data != NULL);
+
+        //printf("processing\n");
         
 
         //file_write_raw(segment, fetcher->file);
@@ -70,6 +72,7 @@ void *process_data_queue(void *arg)
 
         if (ret < 0)
         {
+            printf("SEGMENT_ERROR\n");
             segment_status_set(segment, SEGMENT_ERROR);
             
             // TODO: Free queue_item
@@ -93,13 +96,14 @@ void *process_data_queue(void *arg)
 
         if (ret == 0)
         {
-            //file_combine(segment->post, fetcher->file);
+            file_combine(segment->post, fetcher->file);
             nzb_fetch_file_complete(fetcher, segment->post);
-            //types_free_post(segment->post);
+            //post_free(segment->post);
         }
         free(segment->decoded_data);
         segment->decoded_data = NULL;
         segment->decoded_size = 0;
+
         queue_item_destroy(queue_item);
     }   
 #ifdef WIN32
@@ -114,7 +118,7 @@ int process_yenc_data(segment_t *segment)
 {
     int ret;
     
-    ret = yenc_decode(segment->data, segment->decoded_data,
+    ret = yenc_decode(segment->data, &segment->decoded_data,
                       &segment->post->filename, &segment->post->filesize,
                       &segment->number);
     
