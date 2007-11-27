@@ -33,5 +33,6 @@
 int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *partnum);
 uint32_t yenc_parse_yend(char *line);
 int yenc_parse_ypart(char *line);
-void yenc_parse_ybegin(char *line, char **filename, int *filesize, int *partnum);
+void yenc_parse_ybegin(char *line, char **filename, int *filesize,
+                       int *partnum, int *line_length);
 #endif

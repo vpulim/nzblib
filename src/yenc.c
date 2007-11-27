@@ -65,6 +65,7 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
     int len = 0;
     int datasize = 0;
     int allocated = 0;
+    int line_length = -1;
     
     if (src == NULL)
     {
@@ -82,7 +83,7 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
         
         if(strncmp(p, "=ybegin ", 8) == 0)
         {
-            yenc_parse_ybegin(p, filename, filesize, partnum);
+            yenc_parse_ybegin(p, filename, filesize, partnum, &line_length);
             in_data = 1;
         }
         else if(strncmp(p, "=ypart", 5) == 0)
@@ -108,9 +109,18 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
                 allocated = 1;
             }
             
-            for (i = 0, len = (int)strlen(p); i < len; i++)
+            // Try to use specified line length in the yenc file
+            if (line_length  < 0)
+                len = strlen(p);
+            else
+                len = line_length + 1;
+                
+            for (i = 0; i < len; i++)
             {
                 ch = p[i];
+                
+                if (ch == 0)
+                    break;
 
                 // Escape double dots at the start of the line 
                 if (i == 0 && ch == '.' && p[i+1] == '.')
@@ -144,7 +154,8 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
  *
  *  TODO: Why segment->filename and not segment->filesize
  */
-void yenc_parse_ybegin(char *line, char **filename, int *filesize, int *partnum)
+void yenc_parse_ybegin(char *line, char **filename, int *filesize,
+                       int *partnum, int *line_length)
 {
     char *p = line;
     char *c;
@@ -157,6 +168,15 @@ void yenc_parse_ybegin(char *line, char **filename, int *filesize, int *partnum)
         p = index(c, ' ');
         *p = '\0';
         (*partnum) = strtol(c, (char **)NULL, 10);
+        *p = ' ';
+    }
+
+    if((c = strstr(line, "line=")))
+    {
+        c += 5;
+        p = index(c, ' ');
+        *p = '\0';
+        (*line_length) = strtol(c, (char **)NULL, 10);
         *p = ' ';
     }
     
@@ -277,6 +297,8 @@ int main(int argc, char **argv)
     printf("Doing %d iterations\n", iterations);
     for(i = 0; i < iterations; i++)
     {
+        post_create();
+        segment_create();
         ret = yenc_decode(data, &decoded_data, &filename, &filesize, &partnumber);
         //printf("yenc_decode() returned %d\n", ret);
     }
