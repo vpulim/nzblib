@@ -157,44 +157,10 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
 void yenc_parse_ybegin(char *line, char **filename, int *filesize,
                        int *partnum, int *line_length)
 {
-    char *p = line;
-    char *c;
-    
-    
-    p += 8;
-    if((c = strstr(line, "part=")))
-    {
-        c += 5;
-        p = index(c, ' ');
-        *p = '\0';
-        (*partnum) = strtol(c, (char **)NULL, 10);
-        *p = ' ';
-    }
-
-    if((c = strstr(line, "line=")))
-    {
-        c += 5;
-        p = index(c, ' ');
-        *p = '\0';
-        (*line_length) = strtol(c, (char **)NULL, 10);
-        *p = ' ';
-    }
-    
-    if((c = strstr(line, "size=")))
-    {
-        c += 5;
-        p = index(c, ' ');
-        *p = '\0';
-        (*filesize) = strtol(c, (char **)NULL, 10);
-        *p = ' ';
-    }
-
-    if((c = strstr(line, "name=")))
-    {
-        c += 5;
-        (*filename) = strdup(c);    
-    }
-            
+    yenc_read_keyword_int("part=", line, partnum);
+    yenc_read_keyword_int("line=", line, line_length);
+    yenc_read_keyword_int("size=", line, filesize);
+    yenc_read_keyword_str("name=", line, filename);
 }
 
 
@@ -209,27 +175,11 @@ int yenc_parse_ypart(char *line)
 {
     int ypart_size_begin = 0;
     int ypart_size_end = 0;
-    char *p;
-    char *value;
-
-    if((value = strstr(line, "begin=")))
-    {
-        value += 6;
-        
-        p = index(value, ' ');
-        *p = '\0';
-
-        ypart_size_begin = (uint32_t)strtoull(value, (char **)NULL, 10);
-        *p = ' ';
-    }
     
-    if((value = strstr(line, "end=")))
-    {
-        value += 4;
-        
-        ypart_size_end = (uint32_t)strtoull(value, (char **)NULL, 10);
-        return ypart_size_end - (ypart_size_begin -1);
-    }
+    yenc_read_keyword_int("begin=", line, &ypart_size_begin);
+    yenc_read_keyword_int("end=", line, &ypart_size_end);
+
+    return ypart_size_end - (ypart_size_begin -1);
 }
 
 /*
@@ -244,14 +194,51 @@ uint32_t yenc_parse_yend(char *line)
 {
     char *p = NULL;
     
-    // if is part
-    // p = strstr(p, "pcrc32=");
-    // else
     p = strstr(line, "crc32=");
     if(p != NULL)
         return (uint32_t)strtoull(p+6, (char **)NULL, 16);
     else
         return 0;
+}
+
+
+int yenc_read_keyword_int(char *keyword, char *src, int *dst)
+{
+    char *c, *p;
+    if((c = strstr(src, keyword)))
+    {
+        c += strlen(keyword);
+        p = index(c, ' ');
+        *p = '\0';
+        (*dst) = strtol(c, (char **)NULL, 10);
+        *p = ' ';
+        
+        return 0;
+    }
+    
+    return -1;
+}
+
+int yenc_read_keyword_str(char *keyword, char *src, char **dst)
+{
+    char *c, *p;
+    if((c = strstr(src, keyword)))
+    {
+        c += strlen(keyword);
+        p = index(c, ' ');
+        
+        if (p != NULL)
+            *p = '\0';
+
+        (*dst) = strdup(c);
+        
+        if (p != NULL)
+            *p = ' ';
+        
+        return 0;
+    }
+
+    return -1;
 }
 
 
@@ -291,14 +278,12 @@ int main(int argc, char **argv)
     fp = fopen(argv[1], "r");
     
     bytes = fread(data, sizeof(char), stat_buf.st_size, fp);
-    printf("Read %d bytes (stat = %d)\n", bytes, stat_buf.st_size);
+    printf("Read %d bytes (stat = %d)\n", bytes, (int)stat_buf.st_size);
     fclose(fp);
     
     printf("Doing %d iterations\n", iterations);
     for(i = 0; i < iterations; i++)
     {
-        post_create();
-        segment_create();
         ret = yenc_decode(data, &decoded_data, &filename, &filesize, &partnumber);
         //printf("yenc_decode() returned %d\n", ret);
     }
