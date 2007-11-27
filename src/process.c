@@ -66,9 +66,9 @@ void *process_data_queue(void *arg)
         
 
         //file_write_raw(segment, fetcher->file);
-        ret = yenc_decode(segment);
+        ret = process_yenc_data(segment);
 
-        if (ret != YENC_OK)
+        if (ret < 0)
         {
             segment_status_set(segment, SEGMENT_ERROR);
             
@@ -109,6 +109,24 @@ void *process_data_queue(void *arg)
 #endif
 }
 
+
+int process_yenc_data(segment_t *segment)
+{
+    int ret;
+    
+    ret = yenc_decode(segment->data, segment->decoded_data,
+                      &segment->post->filename, &segment->post->filesize,
+                      &segment->number);
+    
+    if (ret > 0)
+        segment->decoded_size = ret;
+        
+    return ret;
+
+    
+    
+    
+}
 
 int process_check_post_status(post_t *post)
 {

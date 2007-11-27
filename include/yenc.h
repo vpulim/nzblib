@@ -30,14 +30,8 @@
 #include "compat/stdint.h"
 #endif
 
-#include "segment.h"
-
-#define     YENC_OK             0x00
-#define     YENC_CRC_ERROR      0x01
-#define     YENC_ERROR          0x02
-
-int yenc_decode(segment_t *segment);
+int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *partnum);
 uint32_t yenc_parse_yend(char *line);
-void yenc_parse_ypart(char *line, segment_t *segment);
-void yenc_parse_ybegin(char *line, segment_t *segment);
+int yenc_parse_ypart(char *line);
+void yenc_parse_ybegin(char *line, char **filename, int *filesize, int *partnum);
 #endif

@@ -44,17 +44,18 @@
 #include "crc32.h"
 #include "yenc.h"
 
+#ifdef DEBUG
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#endif
+
 
 /*
  * Yenc decode the data in segment->data and store it in segment->decoded_data
- *
- * TODO:
- *  - Performance: create hash while decoding instead of at the end. This might
- *    give a small performance boost.
  */
-int yenc_decode(segment_t *segment)
+int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *partnum)
 {
-    char *p, *s = segment->data;
+    char *p, *s = strdup(src);
     unsigned char ch;
     uint32_t yenc_checksum = 0;
     uint32_t data_checksum;
@@ -62,13 +63,14 @@ int yenc_decode(segment_t *segment)
     int pos = 0;
     int in_data = 0;
     int len = 0;
+    int datasize = 0;
+    int allocated = 0;
     
-    if (segment->data == NULL)
+    if (src == NULL)
     {
         fprintf(stderr, "No data to decode!\n");
         return 1;
     }
-
     
     data_checksum = crc32_init();
     
@@ -77,18 +79,15 @@ int yenc_decode(segment_t *segment)
         if (*p == 0)
             continue;
         
+        
         if(strncmp(p, "=ybegin ", 8) == 0)
         {
-            yenc_parse_ybegin(p, segment);
-            
-            // Allocate memory
-            segment->decoded_data = malloc(segment->decoded_size + 1);
-            
+            yenc_parse_ybegin(p, filename, filesize, partnum);
             in_data = 1;
         }
         else if(strncmp(p, "=ypart", 5) == 0)
         {
-            yenc_parse_ypart(p, segment);
+            datasize = yenc_parse_ypart(p);
         }
         else if(strncmp(p, "=yend", 5) == 0)
         {
@@ -98,6 +97,17 @@ int yenc_decode(segment_t *segment)
         }
         else if (in_data)
         {
+            // When this is not a multipart, the datasize is the filesize
+            if (datasize == 0)
+                datasize = *filesize;
+            
+            // Allocate memory 
+            if (!allocated)
+            {
+                (*dst) = malloc(datasize + 1);
+                allocated = 1;
+            }
+            
             for (i = 0, len = (int)strlen(p); i < len; i++)
             {
                 ch = p[i];
@@ -111,18 +121,18 @@ int yenc_decode(segment_t *segment)
 
                 ch -= 42;
 
-                segment->decoded_data[pos++] = ch;
+                (*dst)[pos++] = ch;
                 data_checksum = crc32_add(data_checksum, ch);
             }
         }
     }
-    segment->decoded_data[pos] = '\0';
+    (*dst)[pos] = '\0';
 
     data_checksum = crc32_finish(data_checksum);
     if (yenc_checksum != data_checksum || yenc_checksum == 0)
-        return YENC_CRC_ERROR;
+        return -1;
     
-    return YENC_OK;
+    return datasize;
 }
 
 /*
@@ -134,7 +144,7 @@ int yenc_decode(segment_t *segment)
  *
  *  TODO: Why segment->filename and not segment->filesize
  */
-void yenc_parse_ybegin(char *line, segment_t *segment)
+void yenc_parse_ybegin(char *line, char **filename, int *filesize, int *partnum)
 {
     char *p = line;
     char *c;
@@ -146,7 +156,7 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
         c += 5;
         p = index(c, ' ');
         *p = '\0';
-        segment->number = strtol(c, (char **)NULL, 10);
+        (*partnum) = strtol(c, (char **)NULL, 10);
         *p = ' ';
     }
     
@@ -155,41 +165,27 @@ void yenc_parse_ybegin(char *line, segment_t *segment)
         c += 5;
         p = index(c, ' ');
         *p = '\0';
-        segment->decoded_size = strtol(c, (char **)NULL, 10);
-        segment->post->filesize = segment->decoded_size;
+        (*filesize) = strtol(c, (char **)NULL, 10);
         *p = ' ';
     }
 
     if((c = strstr(line, "name=")))
     {
         c += 5;
-        
-        if(segment->post->filename == NULL ||
-           strcmp(c, segment->post->filename) != 0)
-        {
-            // Force the use of the filename in the yenc message 
-            if(segment->post->filename != NULL)
-                free(segment->post->filename);
-                
-            segment->post->filename = strdup(c);    
-        }
+        (*filename) = strdup(c);    
     }
             
 }
 
 
 /*
- * Parse the '=ypart ' line and store all relevant information in the segment
- * structure.
+ * Parse the '=ypart ' line and return the size of the contained data when
+ * decoded.
  *
  * The =ypart line is only available in multipart messages.
  *
- * segment->decoded_size is the size of this part
- * segment->decoded_data is pointer to the data
- *
- * TODO: Why realloc and not malloc?
  */
-void yenc_parse_ypart(char *line, segment_t *segment)
+int yenc_parse_ypart(char *line)
 {
     int ypart_size_begin = 0;
     int ypart_size_end = 0;
@@ -212,11 +208,8 @@ void yenc_parse_ypart(char *line, segment_t *segment)
         value += 4;
         
         ypart_size_end = (uint32_t)strtoull(value, (char **)NULL, 10);
-        segment->decoded_size = ypart_size_end - (ypart_size_begin -1);
-        segment->decoded_data = reallocf(segment->decoded_data,
-                                         segment->decoded_size + 1);
+        return ypart_size_end - (ypart_size_begin -1);
     }
-            
 }
 
 /*
@@ -243,44 +236,56 @@ uint32_t yenc_parse_yend(char *line)
 
 
 
-
-
 #ifdef DEBUG
 int main(int argc, char **argv)
 {
     FILE *fp;
-    int ret, bytes;
-    segment_t *segment;
-    post_t *post;
-    
+    char *decoded_data;
     char *data;
-
+    int bytes;
+    int ret;
+    char *filename;
+    int filesize;
+    int partnumber;
+    int i;
+    struct stat stat_buf;
+    int iterations = 10000;
     
-    int i = 0;
-    for(i = 0; i < 1; i++)
+    if (argc < 2)
     {
-        data = malloc(2048576);
-        fp = fopen(argv[1], "r");
-        if (fp == NULL)
-        {
-            perror("Error opening file");
-            return 1;
-        }
-        
-        bytes = fread(data, sizeof(char), 2048576, fp);
-        printf("Read %d bytes\n", bytes);
-        fclose(fp);
-        post = post_create();
-        segment = segment_create();
-        segment->data = data;
-        segment->bytes = bytes;
-        segment->post = post;
-        
-        ret = yenc_decode(segment);
-        printf("yenc_decode() returned %d\n", ret);
-        printf("Segment number: %d\n", segment->number);
-        
+        fprintf(stderr, "No filename given\n");
+        return EXIT_FAILURE;
     }
+    
+    
+    ret = stat(argv[1], &stat_buf);
+    if (ret < 0)
+    {
+        fprintf(stderr, "No such file or directory\n");
+        return EXIT_FAILURE;
+    }
+    
+    data = malloc(stat_buf.st_size + 1);
+    
+
+    fp = fopen(argv[1], "r");
+    
+    bytes = fread(data, sizeof(char), stat_buf.st_size, fp);
+    printf("Read %d bytes (stat = %d)\n", bytes, stat_buf.st_size);
+    fclose(fp);
+    
+    printf("Doing %d iterations\n", iterations);
+    for(i = 0; i < iterations; i++)
+    {
+        ret = yenc_decode(data, &decoded_data, &filename, &filesize, &partnumber);
+        //printf("yenc_decode() returned %d\n", ret);
+    }
+    
+    printf("Segment number: %d\n", partnumber);
+    
+    fp = fopen("out", "w");
+    fwrite(decoded_data, ret, sizeof(char), fp);
+    fclose(fp);
     
     return 0;
 }
