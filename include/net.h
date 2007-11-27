@@ -39,6 +39,7 @@ typedef struct connection_s {
 #if HAVE_LIBSSL
     SSL * ssl;
 #endif
+    int tcp_recvspace;
 } connection_t;
 
 int net_prepare_connection(struct server_s *server);

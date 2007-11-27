@@ -95,8 +95,12 @@ connection_t *net_connect(struct sockaddr_in * addr, int ssl)
     connection_t *conn = malloc(sizeof(connection_t));
     
     conn->use_ssl = ssl;
+    //conn->tcp_recvspace = 32768; // See sysctl net.inet.tcp.recvspace
+    conn->tcp_recvspace = 1600; // See sysctl net.inet.tcp.recvspace
     
     conn->sock = (int)socket(PF_INET, SOCK_STREAM, 0);
+
+    //getsockopt(conn->sock, SOL_SOCKET, SO_RCVBUF, &conn->tcp_recvspace, sizeof(int));
     
     ret = connect(conn->sock , (struct sockaddr *)addr, sizeof(struct sockaddr));
     
@@ -126,15 +130,17 @@ int net_recv(connection_t *conn, char **data)
 {
     int bytes;
 
-    *data = malloc(sizeof(char) * BUFFER_SIZE);
+    *data = malloc(conn->tcp_recvspace + 1);
 
 #if HAVE_LIBSSL 
     if (conn->use_ssl)
-	bytes = SSL_read(conn->ssl, *data, BUFFER_SIZE);
+	bytes = SSL_read(conn->ssl, *data, conn->tcp_recvspace);
     else
 #else
-	bytes = recv(conn->sock, *data, BUFFER_SIZE, 0);
+	bytes = recv(conn->sock, *data, conn->tcp_recvspace, 0);
 #endif
+
+    //printf("tcp_recvspace = %d - received = %d\n", conn->tcp_recvspace, bytes);
     
     if (bytes == -1)
     {
