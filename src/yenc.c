@@ -55,7 +55,7 @@
  */
 int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *partnum)
 {
-    char *p, *s = strdup(src);
+    char *p, *s, *data;
     unsigned char ch;
     uint32_t yenc_checksum = 0;
     uint32_t data_checksum;
@@ -66,7 +66,6 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
     int datasize = 0;
     int allocated = 0;
     int line_length = -1;
-    
     if (src == NULL)
     {
         fprintf(stderr, "No data to decode!\n");
@@ -75,11 +74,15 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
     
     data_checksum = crc32_init();
     
+
+    data = strdup(src);
+    s = data;
+
+
     while((p = strsep(&s, "\r\n")))
     {
         if (*p == 0)
             continue;
-        
         
         if(strncmp(p, "=ybegin ", 8) == 0)
         {
@@ -114,14 +117,14 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
                 len = strlen(p);
             else
                 len = line_length + 1;
-                
+            
             for (i = 0; i < len; i++)
             {
                 ch = p[i];
                 
                 if (ch == 0)
                     break;
-
+                    
                 // Escape double dots at the start of the line 
                 if (i == 0 && ch == '.' && p[i+1] == '.')
                     continue;
@@ -136,12 +139,13 @@ int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *part
             }
         }
     }
+    free(data);
     (*dst)[pos] = '\0';
 
     data_checksum = crc32_finish(data_checksum);
     if (yenc_checksum != data_checksum || yenc_checksum == 0)
         return -1;
-    
+
     return datasize;
 }
 
@@ -202,16 +206,21 @@ uint32_t yenc_parse_yend(char *line)
 }
 
 
-int yenc_read_keyword_int(char *keyword, char *src, int *dst)
+int yenc_read_keyword_int(const char *keyword, char *src, int *dst)
 {
     char *c, *p;
     if((c = strstr(src, keyword)))
     {
         c += strlen(keyword);
         p = index(c, ' ');
-        *p = '\0';
+        
+        if (p != NULL)
+            *p = '\0';
+        
         (*dst) = strtol(c, (char **)NULL, 10);
-        *p = ' ';
+        
+        if (p != NULL)
+            *p = ' ';
         
         return 0;
     }
@@ -219,7 +228,7 @@ int yenc_read_keyword_int(char *keyword, char *src, int *dst)
     return -1;
 }
 
-int yenc_read_keyword_str(char *keyword, char *src, char **dst)
+int yenc_read_keyword_str(const char *keyword, char *src, char **dst)
 {
     char *c, *p;
     if((c = strstr(src, keyword)))
@@ -285,6 +294,7 @@ int main(int argc, char **argv)
     for(i = 0; i < iterations; i++)
     {
         ret = yenc_decode(data, &decoded_data, &filename, &filesize, &partnumber);
+        //printf("ret = %d\n", ret);
         //printf("yenc_decode() returned %d\n", ret);
     }
     
