@@ -34,9 +34,12 @@
 #endif
 
 #ifdef WIN32
-#	include <windows.h>
-#	include <process.h>
-#	include "compat/win32.h"
+#   include <windows.h>
+#   include <process.h>
+#   include "compat/win32.h"
+#else
+#   include <unistd.h>
+
 #endif
 
 #include "net.h"
@@ -57,7 +60,6 @@ static char const rcsid[] = "$Id: Copyright (c) 2004-2007 Michael van Tellingen.
 nzb_fetch *nzb_fetch_init()
 {
     nzb_fetch *fetcher;
-    int ret;
 #ifdef WIN32
 	WSADATA wsaData;
 #endif
