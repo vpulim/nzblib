@@ -143,7 +143,6 @@ queue_list_t * queue_list_create()
  */
 void queue_list_sleep(queue_list_t *queue)
 {
-	printf("queue_list_sleep() - SLEEP\n");
 #ifdef WIN32
 	MTX_LOCK(&queue->mtx_cond);
 	WaitForSingleObject(queue->cond_item, INFINITE);
@@ -153,7 +152,6 @@ void queue_list_sleep(queue_list_t *queue)
     pthread_cond_wait(&queue->cond_item, &queue->mtx_cond);
 	MTX_UNLOCK(&queue->mtx_cond);
 #endif
-	printf("queue_list_sleep() - ALIVE\n");
 }
 
 /*!
