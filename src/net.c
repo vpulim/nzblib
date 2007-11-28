@@ -99,7 +99,8 @@ connection_t *net_connect(struct sockaddr_in * addr, int ssl)
     conn->tcp_recvspace = 1600; // See sysctl net.inet.tcp.recvspace
     
     conn->sock = (int)socket(PF_INET, SOCK_STREAM, 0);
-
+    conn->recv_bytes = 0;
+    
     //getsockopt(conn->sock, SOL_SOCKET, SO_RCVBUF, &conn->tcp_recvspace, sizeof(int));
     
     ret = connect(conn->sock , (struct sockaddr *)addr, sizeof(struct sockaddr));
@@ -150,6 +151,7 @@ int net_recv(connection_t *conn, char **data)
         return -1;
     }
     
+    conn->recv_bytes += bytes;
     (*data)[bytes] = '\0';
     return bytes;
 }

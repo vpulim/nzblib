@@ -198,17 +198,18 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
         // Create a thread for each connection, see nttp_connection.c
         for(i = 0; i < server->num_threads; i++)
         {
-			printf("Creating connection to %s\n", server->address);
+	    printf("Creating connection to %s\n", server->address);
             server->threads[i].thread_num = i + connections;
             server->threads[i].server = server;
             
             server->threads[i].queues = fetcher->priority_queues;
             server->threads[i].data_queue = fetcher->data_queue;
+            gettimeofday(&server->threads[i].prev_time, NULL);
 #ifdef WIN32
-			_beginthread(&nttp_connection,
-						 0,
-						 (void *)&server->threads[i]
-			);
+            _beginthread(&nttp_connection,
+                                     0,
+                                     (void *)&server->threads[i]
+            );
 #else
             pthread_create( &server->threads[i].thread_id,
                             NULL,
@@ -284,6 +285,43 @@ int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files)
     return num_posts;
 }
 
+int nzb_fetch_list_connections(nzb_fetch *fetcher, nzb_connections ***connections)
+{
+    int num_connections;
+    int i = 1, j = 0;
+    server_t *server;
+
+    // Free previous data
+/*    if (*connections != NULL)
+    {
+        num_connections = (sizeof(*connections) / sizeof(nzb_connections *));
+        for(i = 0; i < num_connections; i++)
+            free((*connections)[i]);
+        free(*connections);
+    }   */ 
+    num_connections = 0;
+    for(server = fetcher->servers; server != NULL; server = server->next)
+        num_connections+= server->num_threads;
+
+    *connections = malloc(sizeof(nzb_connections *) * num_connections);
+    
+    for(server = fetcher->servers; server != NULL; server = server->next)
+    {
+        for(i = 0; i < server->num_threads; i++, j++)
+        {
+            (*connections)[j] = malloc(sizeof(nzb_connections));
+            (*connections)[j]->address = server->address;
+            (*connections)[j]->transfer_rate = server_calc_transfer_rate(
+                                                    &server->threads[i]
+                                                );
+        }
+    }
+    
+    
+    return num_connections;
+            
+}
+
 int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
 {
     post_t *post = filelist->post;
@@ -293,7 +331,7 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
     fetcher->file = filelist->file;
     
     printf("Putting file %s on the queue\n", filelist->filename);
-    printf("Storing complete file in %s and temp file in %s\n",
+    printf("Paths:\n Complete files: %s\n Temporary files: %s\n",
            fetcher->file->storage_path, fetcher->file->temporary_path);
  	
     for (i = 0; i < post->num_segments; i++)

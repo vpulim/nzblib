@@ -72,7 +72,7 @@ char *file_get_path(char *path)
 #ifdef WIN32
 	return strdup(resolved_path);
 #else
-    return result;
+    return strdup(resolved_path);
 #endif
 
 }
@@ -147,19 +147,11 @@ char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
     char *filename;
     char *path;
     
-    
-    path = file_get_path(file->temporary_path);
-    //printf("==> %s\n", file->temporary_path);
-    
-    if (path == NULL)
-        return NULL;
-    
     assert(segment->post->filename != NULL);
     
-    asprintf(&filename, "%s%s%s.segment.%03d", path, PATH_SEP,
+    asprintf(&filename, "%s%s%s.segment.%03d", file->temporary_path, PATH_SEP,
              segment->post->filename, segment->number);
     
-    //free(path);
     return filename;
 }
 

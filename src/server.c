@@ -34,7 +34,9 @@
 #include "server.h"
 #include "nzb_fetch.h"
 
-
+#include <sys/time.h>
+#include <stdio.h>
+#include <assert.h>
 
 /*!
  * Swap two pointer values
@@ -145,4 +147,29 @@ int server_calculate_priorities(nzb_fetch *fetcher)
     free(servers);
     
     return unique_priorities;
+}
+
+
+int server_calc_transfer_rate(struct connection_thread *conn_thread)
+{
+    struct timeval curtime;
+    int sec_diff;
+    long usec_diff;
+    int bytes;
+    float rate;
+    
+    assert(conn_thread != NULL);
+    
+    gettimeofday(&curtime, NULL);
+    sec_diff = curtime.tv_sec - conn_thread->prev_time.tv_sec;
+    usec_diff = curtime.tv_usec - conn_thread->prev_time.tv_usec;
+    usec_diff += (sec_diff * 1000000);
+    
+    bytes = conn_thread->connection->recv_bytes - conn_thread->prev_recv_bytes;
+    
+    conn_thread->prev_recv_bytes = conn_thread->connection->recv_bytes; 
+    conn_thread->prev_time = curtime;
+    
+
+    return (int)(bytes / (float)(usec_diff / 1000000));
 }
