@@ -194,7 +194,7 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
 	    printf("Creating connection to %s\n", server->address);
             server->threads[i].thread_num = i + connections;
             server->threads[i].server = server;
-            
+            server->threads[i].connected = 0;
             server->threads[i].queues = fetcher->priority_queues;
             server->threads[i].data_queue = fetcher->data_queue;
             //gettimeofday(&server->threads[i].prev_time, NULL);

@@ -156,6 +156,9 @@ int server_calc_transfer_rate(struct connection_thread *conn_thread)
     long time_diff;
     int bytes_diff;
     
+    if (!conn_thread->connected)
+        return;
+    
     assert(conn_thread != NULL);
     
     gettimeofday(&curtime, NULL);

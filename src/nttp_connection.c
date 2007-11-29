@@ -259,6 +259,7 @@ void *nttp_connection(void *arg)
         if (ret != 0)
             goto reconnect;
         
+        ct->connected = 1;
         
         // At this point we have a connection to the server and are ready to
         // retrieve data.
