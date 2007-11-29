@@ -30,9 +30,11 @@
 #include <assert.h>
 
 #ifdef WIN32
-#	include <process.h>
-#	include "compat/reallocf.h"
-#	include "compat/win32.h"
+#   include <process.h>
+#   include "compat/reallocf.h"
+#   include "compat/win32.h"
+#else
+#   include <unistd.h>
 #endif
 
 #include "post.h"
@@ -74,6 +76,9 @@ int nttp_connect(struct connection_thread *ct)
 /*!
  * Authenticate on the NTTP server, except if the username or password are
  * null.
+ *
+ * TODO: When username is send and password is required server sends 381.
+ * but if no password is required it sends 281. This should be handled better.
  */
 int nttp_authenticate(connection_t *conn, char *username, char *password)
 {
@@ -96,7 +101,7 @@ int nttp_authenticate(connection_t *conn, char *username, char *password)
     
     if (status_code != 381)
     {
-        printf(":: Command 'authinfo user' return status code %d\n",
+        fprintf(stderr, ":: Command 'authinfo user' return status code %d\n",
                status_code);
         return -2;
     }
@@ -113,7 +118,7 @@ int nttp_authenticate(connection_t *conn, char *username, char *password)
     
     if (status_code != 281)
     {
-        printf(":: Authorization failed..\n");
+        fprintf(stderr, ":: Authorization failed..\n");
         return -1;
     }
     
@@ -244,16 +249,8 @@ void *nttp_connection(void *arg)
     
     do
     {
-        printf("[Thread %d] Connecting to server %s (priority = %d)\n",
-               ct->thread_num, ct->server->address, ct->server->priority);
-        
         if (nttp_connect(ct) != 0)
-        {
-            printf("[Thread %d] Unable to open connection to %s\n",
-                   ct->thread_num, ct->server->address);
-        
             goto reconnect;
-        }
     
         ret = nttp_authenticate(ct->connection,
                                 ct->server->username,
@@ -278,16 +275,10 @@ void *nttp_connection(void *arg)
     reconnect:
         
         if (reconnect_tries > 3)
-        {
-            printf("[Thread %d] Giving up on server %s\n",
-                   ct->thread_num, ct->server->address);
             goto exit;
-        }
 
         reconnect_tries++;
 
-        printf("[Thread %d] Reonnecting to server %s in 60 seconds (try %d)\n",
-               ct->thread_num, ct->server->address, reconnect_tries);
         sleep(60);
 
     } while (1);
@@ -317,23 +308,14 @@ int nttp_process_queue(struct connection_thread *ct)
     
     while(1)
     {
-        if (ct->queues[ct->server->priority] == NULL)
-        {
-            printf("No existing queue for server %s with priority %d\n",
-                   ct->server->address, ct->server->priority);
-            assert(0);
-        }
+        assert(ct->queues[ct->server->priority] != NULL);
+
         // This function blocks if there is no data
         queue_item = queue_list_shift(queue, ct->server);
 
-        //printf("[Thread %d] Downloading segment %s.%03d (%d)\n",
-        //       ct->thread_num,
-        //       queue_item->segment->post->filename,
-        //       queue_item->segment->index,
-        //       (int)queue_item->segment->post->filesize);
-        
+
         // Select group if the correct one isn't selected
-        // We should iterate the groups if the first one isn't avail
+        // TODO: We should iterate the groups if the first one isn't avail
         if (current_group == NULL ||
             strcmp(queue_item->segment->post->groups[0], current_group) != 0)
         {
@@ -346,23 +328,15 @@ int nttp_process_queue(struct connection_thread *ct)
         ret = nttp_retrieve_segment(ct->connection, queue_item->segment);
         if (ret < 0)
         {
-            // Error retrieving segment
-            
             ret = nttp_handle_retrieve_error(ct, queue_item);
             if (ret < 0)
-            {
-                printf("Giving up on segment\n");
                 segment_status_set(queue_item->segment, SEGMENT_ERROR);
-            } else
-            {
-                printf("Retrying it somehow\n");
-            }
             continue;
         }
         
-        
         assert(queue_item->segment->data != NULL);
         assert(queue != ct->data_queue);
+
         queue_list_append(ct->data_queue, queue_item);
         //sleep(1);
     }
@@ -387,9 +361,6 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     int same_prio_servers = 0;
     int total_servers = 0;
     
-    printf("Error while retrieving %s from %s\n",
-           queue_item->segment->messageid, server->address);
-    
     // Find first server:
     while (server_head->prev != NULL)
         server_head = server_head->prev;
@@ -413,7 +384,6 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
     {
         // There are more servers with the same priority push it on
         // the queue again.
-        printf("Prepending item on same queue for other server\n");
         queue_list_prepend(queue, queue_item);
         return 1;
     }
@@ -426,8 +396,6 @@ int nttp_handle_retrieve_error(struct connection_thread *ct,
         {
             if (server->priority > current_server->priority)
             {
-                printf("Moving item to other queue with prio %d\n", server->priority);
-                printf("Server: %s\n", server->address);
                 queue_item_move(ct->queues[server->priority], queue_item);
                 return 1;
             }

@@ -18,5 +18,5 @@ libnzb_fetch_la_SOURCES = \
 
 
             
-libnzb_fetch_la_CFLAGS = -include config.h -Wall -pedantic
+libnzb_fetch_la_CFLAGS = -include config.h -Wall -pedantic -Werror-implicit-function-declaration -Wconversion
 libnzb_fetch_la_LIBADD = ${EXPAT_LIBS} ${SSL_LIBS} compat/libcompat.la

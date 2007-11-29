@@ -42,6 +42,7 @@
 
 #endif
 
+#include "server.h"
 #include "net.h"
 #include "nttp_connection.h"
 #include "post.h"
@@ -50,7 +51,7 @@
 #include "parse_nzb.h"
 #include "nzb_fetch.h"
 #include "process.h"
-#include "server.h"
+
 
 
 static char const rcsid[] = "$Id: Copyright (c) 2004-2007 Michael van Tellingen.  All rights reserved.$";
@@ -117,21 +118,20 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
     
     if (priority < 0)
     {
-        printf("Error: priority should be > 0\n");
+        fprintf(stderr, "Error: priority should be > 0\n");
         return -1;
     }
 
 #if !HAVE_LIBSSL
     if (ssl > 0)
     {
-        printf("Error: SSL Support is not compiled in\n");
+        fprintf(stderr, "Error: SSL Support is not compiled in\n");
         return -1;
     }
 #endif
 
     new_server = server_create(address, port, username, password,
                                threads, ssl, priority);
-    
     
     // Insert into server linked list
     server = fetcher->servers;
@@ -149,26 +149,19 @@ int nzb_fetch_add_server(nzb_fetch *fetcher, char *address, int port,
         
     }
     
-    required_queues = server_calculate_priorities(fetcher);
+    required_queues = server_calc_priorities(fetcher);
     
     if (required_queues > 1)
     {
-        printf("Require an extra priority queues\n");
-        
         current_queues = sizeof(fetcher->priority_queues) /
                             sizeof(queue_list_t *);
         
-        printf("Required queues: %d Current queues %d\n", required_queues,
-               current_queues);
-        
         if (required_queues > current_queues)
         {
-            printf("Creating extra priority queues: %d\n", required_queues);
             fetcher->priority_queues = reallocf(fetcher->priority_queues,
                                                 sizeof(queue_list_t *) *
                                                 required_queues);
             
-            printf("%d\n", new_server->priority);
             fetcher->priority_queues[new_server->priority] = queue_list_create();
             fetcher->priority_queues[new_server->priority]->id = strdup("priority queue");
         }   
@@ -204,7 +197,7 @@ int nzb_fetch_connect(nzb_fetch *fetcher)
             
             server->threads[i].queues = fetcher->priority_queues;
             server->threads[i].data_queue = fetcher->data_queue;
-            gettimeofday(&server->threads[i].prev_time, NULL);
+            //gettimeofday(&server->threads[i].prev_time, NULL);
 #ifdef WIN32
             _beginthread(&nttp_connection,
                                      0,
@@ -330,10 +323,10 @@ int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *filelist)
     
     fetcher->file = filelist->file;
     
-    printf("Putting file %s on the queue\n", filelist->filename);
-    printf("Paths:\n Complete files: %s\n Temporary files: %s\n",
-           fetcher->file->storage_path, fetcher->file->temporary_path);
- 	
+    //printf("Putting file %s on the queue\n", filelist->filename);
+    //printf("Paths:\n Complete files: %s\n Temporary files: %s\n",
+    //       fetcher->file->storage_path, fetcher->file->temporary_path);
+    //
     for (i = 0; i < post->num_segments; i++)
     {
         if (file_chunk_exists(post->segments[i], filelist->file))

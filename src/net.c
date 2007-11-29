@@ -30,15 +30,16 @@
 #include <assert.h>
 
 #ifdef WIN32
-#	include "compat/vasprintf.h"
-#	include <windows.h>
-#	include "compat/win32.h"
-#	define herror perror
+#   include "compat/vasprintf.h"
+#   include <windows.h>
+#   include "compat/win32.h"
+#   define herror perror
 #else
-#	include <sys/types.h>
-#	include <sys/socket.h>
-#	include <netdb.h>
-#	include <openssl/ssl.h>
+#   include <sys/types.h>
+#   include <sys/socket.h>
+#   include <netdb.h>
+#   include <unistd.h>
+#   include <openssl/ssl.h>
 #endif
 
 #include <stdarg.h>
@@ -52,11 +53,12 @@
 static SSL_CTX *ssl_context;
 
 
-int net_ssl_init()
+int net_ssl_init(void)
 {
     SSL_load_error_strings();
     SSL_library_init();
     ssl_context = SSL_CTX_new(SSLv2_client_method());
+    return 0;
 }
 
 #endif //HAVE_LIBSSL
@@ -80,7 +82,8 @@ int net_prepare_connection(server_t *server)
     }
     
     server->server_addr.sin_family = AF_INET;
-    bcopy(hp->h_addr, &(server->server_addr.sin_addr.s_addr), hp->h_length);
+    bcopy(hp->h_addr, &(server->server_addr.sin_addr.s_addr),
+          (size_t)hp->h_length);
     server->server_addr.sin_port = htons( server->port );
     
     return 0;
@@ -129,28 +132,32 @@ connection_t *net_connect(struct sockaddr_in * addr, int ssl)
  */
 int net_recv(connection_t *conn, char **data)
 {
-    int bytes;
+    int bytes = 0;
 
-    *data = malloc(conn->tcp_recvspace + 1);
+    *data = malloc((size_t)conn->tcp_recvspace + 1);
 
 #if HAVE_LIBSSL 
     if (conn->use_ssl)
 	bytes = SSL_read(conn->ssl, *data, conn->tcp_recvspace);
     else
-#else
-	bytes = recv(conn->sock, *data, conn->tcp_recvspace, 0);
 #endif
+	bytes = recv(conn->sock, *data, conn->tcp_recvspace, 0);
+
 
     //printf("tcp_recvspace = %d - received = %d\n", conn->tcp_recvspace, bytes);
     
     if (bytes == -1)
     {
         perror("Unable to receive");
-        free(data);
+        free(*data);
         data = NULL;
         return -1;
     }
-    
+
+#ifdef NET_DEBUG
+    printf("net_recv('%s')\n", *data);
+#endif
+
     conn->recv_bytes += bytes;
     (*data)[bytes] = '\0';
     return bytes;
@@ -160,7 +167,7 @@ int net_recv(connection_t *conn, char **data)
  * Send data to the NTTP server. This function uses va_start/va_end to let it
  * behave like printf().
  */
-int net_send(connection_t *conn, char *format, ...)
+int net_send(connection_t *conn, const char *format, ...)
 {
     va_list argp;
     int ret;
@@ -174,17 +181,22 @@ int net_send(connection_t *conn, char *format, ...)
     assert (buffer != NULL);
     assert (ret > 0);
 
+#ifdef NET_DEBUG
+    printf("net_send('%s')\n", buffer);
+#endif
+
 #if HAVE_LIBSSL
     if (conn->use_ssl)
 	ret = SSL_write(conn->ssl, buffer, strlen(buffer));
     else
-#else
+# endif // HAVE_LIBSSL
+
 #   ifdef WIN32
 	ret = send(conn->sock, buffer, (int)strlen(buffer), 0);
 #   else
 	ret = send(conn->sock, buffer, strlen(buffer), 0);
 #   endif // WIN32
-# endif // HAVE_LIBSSL
+
     
     if (ret == -1)
     {

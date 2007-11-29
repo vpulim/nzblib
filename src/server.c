@@ -102,7 +102,7 @@ server_t *server_create(char *address, int port, char *username,
  * Calculate the real server priorities based on the user_priorites.
  * Thus priorities 0, 2, 40, 40 become priorities 0, 1, 2, 2
  */
-int server_calculate_priorities(nzb_fetch *fetcher)
+int server_calc_priorities(nzb_fetch *fetcher)
 {
     int num_servers = 0;
     int i;
@@ -153,23 +153,24 @@ int server_calculate_priorities(nzb_fetch *fetcher)
 int server_calc_transfer_rate(struct connection_thread *conn_thread)
 {
     struct timeval curtime;
-    int sec_diff;
-    long usec_diff;
-    int bytes;
-    float rate;
+    long time_diff;
+    int bytes_diff;
     
     assert(conn_thread != NULL);
     
     gettimeofday(&curtime, NULL);
-    sec_diff = curtime.tv_sec - conn_thread->prev_time.tv_sec;
-    usec_diff = curtime.tv_usec - conn_thread->prev_time.tv_usec;
-    usec_diff += (sec_diff * 1000000);
     
-    bytes = conn_thread->connection->recv_bytes - conn_thread->prev_recv_bytes;
+    // Time in ms between current time and the time this was last called.
+    time_diff = (curtime.tv_usec - conn_thread->prev_time.tv_usec) + 
+                ((curtime.tv_sec - conn_thread->prev_time.tv_sec) * 1000000);
     
+    // Number of bytes received since last call
+    bytes_diff = conn_thread->connection->recv_bytes - \
+                 conn_thread->prev_recv_bytes;
+    
+    // Store current as previous
     conn_thread->prev_recv_bytes = conn_thread->connection->recv_bytes; 
     conn_thread->prev_time = curtime;
-    
 
-    return (int)(bytes / (float)(usec_diff / 1000000));
+    return (int)(bytes_diff / (float)(time_diff / 1000000));
 }

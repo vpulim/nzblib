@@ -119,14 +119,14 @@ int file_write_raw(segment_t *segment, nzb_file *file)
     char *filename;
     FILE *fp;
 
-
-    asprintf(&filename, "%s.segment.%03d", 
+    
+    asprintf(&filename, "%s%s%s.segment.%03d", file->temporary_path, PATH_SEP,
              segment->post->filename, segment->number);
 
     fp = fopen(filename, "w");
     if(fp != NULL)
     {
-        fwrite(segment->data, 1, segment->bytes, fp);
+        fwrite(segment->data, (size_t)1, (size_t)segment->bytes, fp);
         fclose(fp);
     }
     else
@@ -145,7 +145,6 @@ int file_write_raw(segment_t *segment, nzb_file *file)
 char * file_get_chunk_filename(segment_t *segment, nzb_file *file)
 {
     char *filename;
-    char *path;
     
     assert(segment->post->filename != NULL);
     
