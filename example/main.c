@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
     int i;
     int ret;
     float rate;
+    float total_rate;
     int major;
     char qualifiers[3][4] = {"B", "KiB", "MiB"};
     
@@ -44,7 +45,11 @@ int main(int argc, char *argv[])
 
     nzb_fetch_add_server(fetcher, argv[2], 119,
                         argv[3], argv[4], 3, 0, 0);
-    
+
+    // Additional server
+    if (argc >= 7)
+        nzb_fetch_add_server(fetcher, argv[5], 119,
+                            argv[6], argv[7], 3, 0, 0);    
  
     nzb_fetch_connect(fetcher);
     
@@ -77,18 +82,18 @@ int main(int argc, char *argv[])
         //    printf("nzb_fetch_download(%s)\n", files[i]->filename);
         //}
     }
-	
-    
+
+
     while(1)
     {
         sleep(1);
-
         num_connections = nzb_fetch_list_connections(fetcher, &connections);
-        
-        
+
+        total_rate = 0; 
         for(i = 0; i < num_connections; i++)
         {
             rate = connections[i]->transfer_rate;
+            total_rate += rate;
             
             major = 0;
             while (rate > 1024)
@@ -101,7 +106,19 @@ int main(int argc, char *argv[])
             printf("%d. %-20s: %f %s/sec\n", i, connections[i]->address,
                    rate, qualifiers[major]);
         }
-        printf("\n");
+        
+        if (total_rate >= 0)
+        {
+            major = 0;
+            while (total_rate > 1024)
+            {
+                total_rate /= 1024.0;
+                major++;
+            }
+            printf("   %-20s: %f %s/sec\n", "Total",
+                   total_rate, qualifiers[major]);
+            printf("\n");
+        }
     }
    
     return 0;
