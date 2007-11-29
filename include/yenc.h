@@ -35,6 +35,6 @@ uint32_t yenc_parse_yend(char *line);
 int yenc_parse_ypart(char *line);
 void yenc_parse_ybegin(char *line, char **filename, int *filesize,
                        int *partnum, int *line_length);
-int yenc_read_keyword_int(char *keyword, char *src, int *dst);
-int yenc_read_keyword_str(char *keyword, char *src, char **dst);
+int yenc_read_keyword_int(const char *keyword, char *src, int *dst);
+int yenc_read_keyword_str(const char *keyword, char *src, char **dst);
 #endif
