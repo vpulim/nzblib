@@ -29,6 +29,7 @@
 
 #include "server.h"
 
+
 #if HAVE_LIBSSL
 #   include <openssl/ssl.h>
 #endif
@@ -40,6 +41,11 @@ typedef struct connection_s {
     SSL * ssl;
 #endif
     int tcp_recvspace;
+    
+    int recv_bytes;
+    
+
+    
 } connection_t;
 
 int net_prepare_connection(struct server_s *server);

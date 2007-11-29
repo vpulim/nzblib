@@ -27,16 +27,7 @@
 #ifndef _POST_H
 #define _POST_H
 
-#ifdef WIN32
-  #include <string.h>
-  #include <conio.h>
-  #include <process.h>
 
-  #define THREAD_ID int
-#else 
-	#include <pthread.h>
-	#define THREAD_ID pthread_t
-#endif
 
 #include "server.h"
 #include "segment.h"
@@ -75,19 +66,7 @@ typedef struct post_s
 } post_t;
 
 
-struct connection_thread
-{
-    int thread_num;
-    int ready;
 
-    struct connection_s *connection;          //!< TCP Connection
-
-    struct queue_list_s **queues;     //!< Array of queues with empy segments
-    struct queue_list_s *data_queue;  //!< Pointer to queue with full segments
-    THREAD_ID thread_id;
-    struct server_s *server;
-    //postlist_t *postlist;
-};
 
 void post_segments_sort(post_t * post, int beg, int end);
 

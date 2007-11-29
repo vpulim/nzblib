@@ -28,9 +28,16 @@
 #define _SERVER_H
 
 #ifdef WIN32
-#	include <windows.h>
+#   include <windows.h>
+#   include <string.h>
+#   include <conio.h>
+#   include <process.h>
+#   define THREAD_ID int
 #else
-#	include <netinet/in.h>
+#   include <netinet/in.h>
+#   include <pthread.h>
+#   include <sys/time.h>
+#   define THREAD_ID pthread_t
 #endif
 
 #include "nzb_fetch.h"
@@ -63,6 +70,23 @@ typedef struct server_s
     struct connection_thread *threads;  /*< Array to the connection_threads
                                             used by the connections */
 } server_t;
+
+struct connection_thread
+{
+    int thread_num;
+    int ready;
+
+    struct connection_s *connection;    //!< TCP Connection
+    
+    int prev_recv_bytes;
+    struct timeval prev_time;
+
+    struct queue_list_s **queues;     //!< Array of queues with empy segments
+    struct queue_list_s *data_queue;  //!< Pointer to queue with full segments
+    THREAD_ID thread_id;
+    struct server_s *server;
+    //postlist_t *postlist;
+};
 
 void swap(int *a, int *b);
 void server_sort(server_t * arr[], int beg, int end);
