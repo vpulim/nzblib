@@ -95,7 +95,7 @@ int nzb_fetch_storage_path(nzb_file *file, char *path);
 int nzb_fetch_temporary_path(nzb_file *file, char *path);
 int nzb_fetch_download(nzb_fetch *fetcher, nzb_file_info *file_info);
 int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files);
-int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete);
+int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void (*file_complete)(struct nzb_file_info_s*));
 int nzb_fetch_file_complete(nzb_fetch *fetcher, struct post_s *post);
 int nzb_fetch_list_connections(nzb_fetch *fetcher, nzb_connections ***connections);
 #endif

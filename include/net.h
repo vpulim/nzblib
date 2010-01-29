@@ -51,7 +51,8 @@ typedef struct connection_s {
 int net_prepare_connection(struct server_s *server);
 connection_t* net_connect(struct sockaddr_in * addr, int ssl);
 int net_recv(connection_t *conn, char **data);
-int net_send(connection_t *conn, char *format, ...);
+int net_send(connection_t *conn, const char *format, ...);
 void net_disconnect(connection_t *conn);
+int net_ssl_init(void);
 
 #endif

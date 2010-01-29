@@ -244,7 +244,7 @@ nzb_file *nzb_fetch_parse(char *filename)
 }
 
 
-int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void *file_complete)
+int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void (*file_complete)(struct nzb_file_info_s*))
 {
     fetcher->callback_file_complete = file_complete;
 	return 0;

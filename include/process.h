@@ -31,5 +31,6 @@
 
 void *process_data_queue(void *arg);
 int process_check_post_status(struct post_s *post);
+int process_yenc_data(segment_t *segment);
 
 #endif

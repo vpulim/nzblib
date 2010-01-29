@@ -75,6 +75,7 @@ struct connection_thread
 {
     int thread_num;
     int ready;
+    int connected;
 
     struct connection_s *connection;    //!< TCP Connection
     
@@ -90,7 +91,8 @@ struct connection_thread
 
 void swap(int *a, int *b);
 void server_sort(server_t * arr[], int beg, int end);
-int server_calculate_priorities(struct nzb_fetch_s *fetcher);
+int server_calc_priorities(struct nzb_fetch_s *fetcher);
+int server_calc_transfer_rate(struct connection_thread *conn_thread);
 server_t *server_create(char *address, int port, char *username,
                         char *password, int threads, int ssl, int priority);
 

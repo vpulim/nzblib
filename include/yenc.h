@@ -28,6 +28,8 @@
 #define _YENC_H
 #ifdef WIN32
 #include "compat/stdint.h"
+#else
+#include <stdint.h>
 #endif
 
 int yenc_decode(char *src, char **dst, char **filename, int *filesize, int *partnum);

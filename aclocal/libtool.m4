@@ -31,7 +31,7 @@ AC_DEFUN([AC_PROG_LIBTOOL],
 LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
 
 # Always use our own libtool.
-LIBTOOL='glibtool'
+LIBTOOL='glibtool --tag CXX'
 AC_SUBST(LIBTOOL)dnl
 
 # Prevent multiple expansion
