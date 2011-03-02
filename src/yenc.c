@@ -234,15 +234,7 @@ int yenc_read_keyword_str(const char *keyword, char *src, char **dst)
     if((c = strstr(src, keyword)))
     {
         c += strlen(keyword);
-        p = index(c, ' ');
-        
-        if (p != NULL)
-            *p = '\0';
-
         (*dst) = strdup(c);
-        
-        if (p != NULL)
-            *p = ' ';
         
         return 0;
     }
