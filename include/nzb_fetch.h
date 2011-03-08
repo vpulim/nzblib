@@ -27,6 +27,10 @@
 #ifndef _LIBNZB_FETCH_H
 #define _LIBNZB_FETCH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef WIN32
 #	include <string.h>
 #	include <conio.h>
@@ -98,5 +102,10 @@ int nzb_fetch_list_files(nzb_file *file, nzb_file_info ***files);
 int nzb_fetch_add_callback(nzb_fetch *fetcher, int type, void (*file_complete)(struct nzb_file_info_s*));
 int nzb_fetch_file_complete(nzb_fetch *fetcher, struct post_s *post);
 int nzb_fetch_list_connections(nzb_fetch *fetcher, nzb_connections ***connections);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
